@@ -49,6 +49,34 @@ class TableSpec:
     path: Path
     fmt: str
     delimiter: str
+    editable: bool = True
+
+
+# Source-of-truth files: raw CEM extract, drug features from ChEMBL, all reference
+# data (HPO/MONDO/OT/OMOP), and every file that is regenerated from scripts
+# (bridge/build_*, scripts/build_dataset.py). Editing these through the UI would
+# corrupt the pipeline. The `annotations` file remains fully editable.
+_READONLY_SUBSTRINGS: tuple[str, ...] = (
+    "cem_ingredients",
+    "cem_ingredient_condition_associations",
+    "ingredient_features",
+    "ingredient_target_long",
+    "target_features",
+    "data_dictionary",
+    "provenance",
+    "condition_ontology_map",
+    "ref__",
+    "derived__",
+    "input__",
+    "output__",
+    "splits__",
+)
+
+
+def _is_readonly_name(name: str) -> bool:
+    if name == "annotations":
+        return False
+    return any(sub in name for sub in _READONLY_SUBSTRINGS)
 
 
 def _slug(relpath: Path) -> str:
@@ -91,7 +119,13 @@ def _discover_tables() -> dict[str, TableSpec]:
         name = _slug(rel)
         fmt = ext.lstrip(".")
         delim = "\t" if ext == ".tsv" else ","
-        out[name] = TableSpec(name=name, path=path, fmt=fmt, delimiter=delim)
+        out[name] = TableSpec(
+            name=name,
+            path=path,
+            fmt=fmt,
+            delimiter=delim,
+            editable=not _is_readonly_name(name),
+        )
 
     # Always surface annotations even if the file hasn't been created yet.
     if "annotations" not in out:
@@ -100,6 +134,7 @@ def _discover_tables() -> dict[str, TableSpec]:
             path=DATA_DIR / "annotations.csv",
             fmt="csv",
             delimiter=",",
+            editable=True,
         )
     return out
 
@@ -225,7 +260,9 @@ def list_tables() -> list[TableMeta]:
         columns = _read_header(spec)
         row_count = _row_count(spec.path, spec.fmt)
         warn: str | None = None
-        if row_count > 100_000:
+        if not spec.editable:
+            warn = "source of truth — read only"
+        elif row_count > 100_000:
             warn = f"{row_count:,} rows — full-file rewrite on save is slow"
         out.append(
             TableMeta(
@@ -234,7 +271,7 @@ def list_tables() -> list[TableMeta]:
                 fmt=spec.fmt,
                 columns=columns,
                 row_count=row_count,
-                editable=True,
+                editable=spec.editable,
                 warn=warn,
             )
         )
@@ -269,6 +306,15 @@ def commit_table(name: str, body: Commit) -> CommitResult:
     if name not in tables:
         raise HTTPException(status_code=404, detail=f"unknown table {name!r}")
     spec = tables[name]
+    if not spec.editable:
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                f"{name!r} is a source-of-truth file and is read-only from the UI. "
+                "Edit the upstream data (CEM DB, ChEMBL export, ontology files) or "
+                "regenerate via bridge/build_*_features.py."
+            ),
+        )
 
     with _lock_for(name):
         columns, rows = _read_all(spec)
