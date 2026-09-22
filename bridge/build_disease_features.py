@@ -25,6 +25,7 @@ from bridge.disease import (
     xrefs_from_open_targets,
     xrefs_from_sssom,
 )
+from bridge.genes import load_gene_symbols
 from bridge.xrefs import OMOP_REACHABLE
 
 logger = logging.getLogger(__name__)
@@ -103,11 +104,25 @@ def main() -> None:
         schema={"disease_id": pl.String, "source": pl.String, "code": pl.String},
         orient="row",
     ).unique()
-    genes_table = pl.DataFrame(
-        genes,
-        schema={"disease_id": pl.String, "ncbi_gene_id": pl.Int64, "association_type": pl.String},
-        orient="row",
-    ).unique()
+    symbols = load_gene_symbols()
+    genes_table = (
+        pl.DataFrame(
+            genes,
+            schema={
+                "disease_id": pl.String,
+                "ncbi_gene_id": pl.Int64,
+                "association_type": pl.String,
+            },
+            orient="row",
+        )
+        .unique()
+        # The drug-side tables key on symbol, not NCBI id, so carry both.
+        .with_columns(
+            pl.col("ncbi_gene_id")
+            .replace_strict(symbols, default=None, return_dtype=pl.String)
+            .alias("gene_symbol")
+        )
+    )
     pheno_table = pl.DataFrame(
         pairs, schema={"disease_id": pl.String, "hpo_id": pl.String}, orient="row"
     ).unique()

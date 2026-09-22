@@ -21,6 +21,15 @@ OT_DISEASE_HPO = REF / "ot" / "disease_hpo__disease_hpo.parquet"
 OT_DISEASE_PHENOTYPE = REF / "ot" / "disease_phenotype__disease_phenotype.parquet"
 MONDO_SSSOM = REF / "mondo.sssom.tsv"
 CEM_ASSOCIATIONS = DATA / "cem_ingredient_condition_associations.csv"
+INGREDIENT_TARGETS = DATA / "ingredient_target_long.csv"
+
+# Open Targets ships its target index as several parquet parts.
+OT_TARGET_GLOB_DIR = REF / "ot"
+
+# OMOP vocabulary export (see docs/vocab-export-spec.md)
+OMOP_CONCEPT = REF / "omop" / "concept.csv"
+OMOP_CONCEPT_ANCESTOR = REF / "omop" / "concept_ancestor.csv"
+OMOP_CONCEPT_SYNONYM = REF / "omop" / "concept_synonym.csv"
 
 # Outputs
 HPO_TERMS_OUT = DERIVED / "hpo_terms.parquet"
@@ -30,3 +39,7 @@ DISEASE_TERMS_OUT = DERIVED / "disease_terms.parquet"
 DISEASE_XREFS_OUT = DERIVED / "disease_xrefs.parquet"
 DISEASE_GENES_OUT = DERIVED / "disease_genes.parquet"
 DISEASE_PHENOTYPES_OUT = DERIVED / "disease_phenotypes.parquet"
+CONDITION_MAP_OUT = DERIVED / "condition_ontology_map.parquet"
+CONDITION_FEATURES_OUT = DERIVED / "condition_features.parquet"
+CONDITION_GENES_OUT = DERIVED / "condition_genes.parquet"
+CONDITION_ANCESTORS_OUT = DERIVED / "condition_ancestors.parquet"
