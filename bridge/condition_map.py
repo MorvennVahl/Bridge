@@ -17,6 +17,9 @@ analysis needs.
                     OMOP vocabulary export at data/ref/omop/concept.csv.
   2  label_exact    normalised condition name == normalised ontology label or
                     exact/narrow synonym.
+  2b synonym_exact  same, but matching on an OMOP synonym of the condition rather
+                    than its primary name. SNOMED and MONDO frequently name the
+                    same disease differently.
   3  token_exact    same after dropping stopwords and sorting tokens, which
                     absorbs SNOMED's "Pain of joint" vs HPO's "Joint pain".
   4  llm_adjudicated  a lexical shortlist adjudicated by an LLM (adjudicate.py).
@@ -32,6 +35,8 @@ import unicodedata
 from pathlib import Path
 
 import pandas as pd
+
+from bridge import paths
 
 DATA = Path(__file__).resolve().parent.parent / "data"
 REF = DATA / "ref"
@@ -75,6 +80,24 @@ def load_open_targets_diseases() -> pd.DataFrame:
 def load_condition_concepts() -> pd.DataFrame:
     """The OMOP vocabulary export for the CEM conditions (5,631 rows, all SNOMED)."""
     return pd.read_csv(REF / "omop" / "concept.csv", dtype={"concept_code": str})
+
+
+def condition_synonyms() -> dict[int, list[str]]:
+    """`condition_concept_id` -> its OMOP synonyms.
+
+    SNOMED and MONDO often name the same disease differently — SNOMED calls concept 22281
+    "Sickle cell-hemoglobin SS disease" while MONDO calls it "sickle cell anemia" — so
+    matching on the primary name alone misses diseases that are in both vocabularies. The
+    synonym list carries the alias that bridges them.
+    """
+    frame = pd.read_csv(paths.OMOP_CONCEPT_SYNONYM)
+    ids = pd.Series(frame["condition_concept_id"]).astype(int).tolist()
+    names = pd.Series(frame["concept_synonym_name"]).astype(str).tolist()
+
+    out: dict[int, list[str]] = {}
+    for concept_id, name in zip(ids, names, strict=True):
+        out.setdefault(concept_id, []).append(name)
+    return out
 
 
 def condition_concept_codes() -> pd.Series:
@@ -234,13 +257,25 @@ def build_indexes(
 
 
 def map_conditions(
-    conditions: pd.DataFrame, label, token, sctid, meta, concept_codes: pd.Series | None = None
+    conditions: pd.DataFrame,
+    label,
+    token,
+    sctid,
+    meta,
+    concept_codes: pd.Series | None = None,
+    synonyms: dict[int, list[str]] | None = None,
 ) -> pd.DataFrame:
     """One row per (condition, matched ontology term), tagged with its tier.
 
     `conditions` needs condition_concept_id and condition_name.
     `concept_codes` is an optional condition_concept_id -> SNOMED concept_code
     mapping; without it tier 1 is skipped and coverage is lexical only.
+    `synonyms` is an optional condition_concept_id -> OMOP synonym list; without it the
+    `2b_synonym_exact` tier is skipped.
+
+    Tier ids sort lexically in precedence order, and `2b` deliberately falls between
+    `2_label_exact` and `3_token_exact`: an exact match on an official synonym is weaker
+    evidence than one on the primary name, but stronger than a bag-of-tokens match.
     """
     rows = []
     for row in conditions.itertuples(index=False):
@@ -255,6 +290,13 @@ def map_conditions(
                     matches.setdefault(oid, "1_sctid_xref")
         for oid in label.get(nname, ()):
             matches.setdefault(oid, "2_label_exact")
+        if synonyms is not None:
+            for synonym in synonyms.get(cid, ()):
+                nsyn = normalise(synonym)
+                if not nsyn or nsyn == nname:
+                    continue
+                for oid in label.get(nsyn, ()):
+                    matches.setdefault(oid, "2b_synonym_exact")
         for oid in token.get(token_key(nname), ()):
             matches.setdefault(oid, "3_token_exact")
 
