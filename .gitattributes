@@ -1,2 +1,5 @@
 data/cem_ingredient_condition_associations.csv filter=lfs diff=lfs merge=lfs -text
 data/ref/** filter=lfs diff=lfs merge=lfs -text
+data/ingredient_features.csv filter=lfs diff=lfs merge=lfs -text
+data/target_features.csv filter=lfs diff=lfs merge=lfs -text
+data/ingredient_target_long.csv filter=lfs diff=lfs merge=lfs -text

@@ -1,0 +1,201 @@
+{
+  "generated_by": "build_features.py",
+  "sources": {
+    "chembl": {
+      "source": "ChEMBL",
+      "release": "ChEMBL_37",
+      "release_date": "2026-05-01",
+      "base_url": "https://www.ebi.ac.uk/chembl/api/data",
+      "tables": [
+        {
+          "table": "molecule_phase",
+          "endpoint": "https://www.ebi.ac.uk/chembl/api/data/molecule.json",
+          "query_params": {
+            "max_phase__gte": 1,
+            "only": "molecule_chembl_id,pref_name,molecule_synonyms,max_phase,first_approval,molecule_type,oral,parenteral,topical,black_box_warning,prodrug,withdrawn_flag,natural_product,therapeutic_flag,availability_type,dosed_ingredient,atc_classifications,molecule_properties,molecule_hierarchy,indication_class,usan_stem_definition,chirality,inorganic_flag,polymer_flag"
+          },
+          "n_rows": 16784,
+          "total_count_reported": 16784,
+          "retrieved_utc": "2026-09-22T15:27:46+00:00"
+        },
+        {
+          "table": "molecule_therap",
+          "endpoint": "https://www.ebi.ac.uk/chembl/api/data/molecule.json",
+          "query_params": {
+            "therapeutic_flag": "true",
+            "only": "molecule_chembl_id,pref_name,molecule_synonyms,max_phase,first_approval,molecule_type,oral,parenteral,topical,black_box_warning,prodrug,withdrawn_flag,natural_product,therapeutic_flag,availability_type,dosed_ingredient,atc_classifications,molecule_properties,molecule_hierarchy,indication_class,usan_stem_definition,chirality,inorganic_flag,polymer_flag"
+          },
+          "n_rows": 3890,
+          "total_count_reported": 3890,
+          "retrieved_utc": "2026-09-22T15:28:08+00:00"
+        },
+        {
+          "table": "mechanism",
+          "endpoint": "https://www.ebi.ac.uk/chembl/api/data/mechanism.json",
+          "query_params": {},
+          "n_rows": 7561,
+          "total_count_reported": 7561,
+          "retrieved_utc": "2026-09-22T15:28:16+00:00"
+        },
+        {
+          "table": "drug_warning",
+          "endpoint": "https://www.ebi.ac.uk/chembl/api/data/drug_warning.json",
+          "query_params": {},
+          "n_rows": 2304,
+          "total_count_reported": 2304,
+          "retrieved_utc": "2026-09-22T15:28:17+00:00"
+        },
+        {
+          "table": "metabolism",
+          "endpoint": "https://www.ebi.ac.uk/chembl/api/data/metabolism.json",
+          "query_params": {},
+          "n_rows": 2147,
+          "total_count_reported": 2147,
+          "retrieved_utc": "2026-09-22T15:28:19+00:00"
+        }
+      ]
+    },
+    "targets": {
+      "retrieved_utc_start": "2026-09-22T15:55:50+00:00",
+      "sources": {
+        "chembl_target": {
+          "endpoint": "https://www.ebi.ac.uk/chembl/api/data/target.json",
+          "n_requested": 619,
+          "n_returned": 619,
+          "retrieved_utc": "2026-09-22T15:55:50+00:00"
+        },
+        "uniprot": {
+          "endpoint": "https://rest.uniprot.org/uniprotkb/stream",
+          "fields": "accession,id,protein_name,gene_primary,length,keyword,cc_subcellular_location,cc_function",
+          "n_accessions": 0,
+          "n_rows": 1305,
+          "retrieved_utc": "2026-09-22T15:55:50+00:00"
+        },
+        "ensembl": {
+          "endpoint": "https://rest.ensembl.org/lookup/symbol/homo_sapiens",
+          "n_symbols": 978,
+          "n_mapped": 790,
+          "retrieved_utc": "2026-09-22T15:55:50+00:00"
+        },
+        "opentargets": {
+          "endpoint": "https://api.platform.opentargets.org/api/v4/graphql",
+          "query": "targets(ensemblIds)",
+          "n_genes": 790,
+          "n_returned": 790,
+          "retrieved_utc": "2026-09-22T15:56:05+00:00"
+        }
+      },
+      "non_uniprot_component_accessions_dropped": [
+        "ENSG00000084674",
+        "ENSG00000117601"
+      ]
+    },
+    "protein_class": {
+      "source": "ChEMBL",
+      "release": "ChEMBL_37",
+      "endpoints": {
+        "target_component": "https://www.ebi.ac.uk/chembl/api/data/target_component.json",
+        "protein_classification": "https://www.ebi.ac.uk/chembl/api/data/protein_classification.json"
+      },
+      "n_components": 1322,
+      "n_classes": 905,
+      "retrieved_utc": "2026-09-22T15:57:18+00:00"
+    },
+    "kegg": {
+      "source": "KEGG DRUG",
+      "base_url": "https://rest.kegg.jp",
+      "endpoints": {
+        "name_index": "https://rest.kegg.jp/list/drug",
+        "records": "https://rest.kegg.jp/get/dr:<id> (10 per request)"
+      },
+      "n_entries_in_release": 12896,
+      "n_ingredients_matched": 2557,
+      "n_records_fetched": 2541,
+      "license_note": "KEGG is free for academic use; see https://www.kegg.jp/kegg/legal.html",
+      "retrieved_utc": "2026-09-22T15:58:47+00:00"
+    },
+    "openfda": {
+      "source": "openFDA",
+      "base_url": "https://api.fda.gov",
+      "queries": {
+        "faers_reports_total": {
+          "endpoint": "https://api.fda.gov/drug/event.json",
+          "params": {
+            "count": "patient.drug.openfda.generic_name.exact",
+            "limit": 1000
+          },
+          "error": "HTTP 403",
+          "retrieved_utc": "2026-09-22T15:45:12+00:00"
+        },
+        "faers_reports_serious": {
+          "endpoint": "https://api.fda.gov/drug/event.json",
+          "params": {
+            "search": "serious:1",
+            "count": "patient.drug.openfda.generic_name.exact",
+            "limit": 1000
+          },
+          "error": "HTTP 403",
+          "retrieved_utc": "2026-09-22T15:45:54+00:00"
+        },
+        "faers_reports_death": {
+          "endpoint": "https://api.fda.gov/drug/event.json",
+          "params": {
+            "search": "seriousnessdeath:1",
+            "count": "patient.drug.openfda.generic_name.exact",
+            "limit": 1000
+          },
+          "error": "HTTP 403",
+          "retrieved_utc": "2026-09-22T15:46:36+00:00"
+        },
+        "label_any": {
+          "endpoint": "https://api.fda.gov/drug/label.json",
+          "params": {
+            "count": "openfda.generic_name.exact",
+            "limit": 1000
+          },
+          "n_terms": 1000,
+          "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+          "last_updated": "2026-09-22",
+          "retrieved_utc": "2026-09-22T15:46:37+00:00"
+        },
+        "label_boxed_warning": {
+          "endpoint": "https://api.fda.gov/drug/label.json",
+          "params": {
+            "search": "_exists_:boxed_warning",
+            "count": "openfda.generic_name.exact",
+            "limit": 1000
+          },
+          "n_terms": 1000,
+          "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+          "last_updated": "2026-09-22",
+          "retrieved_utc": "2026-09-22T15:46:38+00:00"
+        },
+        "label_pregnancy": {
+          "endpoint": "https://api.fda.gov/drug/label.json",
+          "params": {
+            "search": "_exists_:pregnancy",
+            "count": "openfda.generic_name.exact",
+            "limit": 1000
+          },
+          "n_terms": 1000,
+          "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+          "last_updated": "2026-09-22",
+          "retrieved_utc": "2026-09-22T15:46:42+00:00"
+        },
+        "label_drug_interactions": {
+          "endpoint": "https://api.fda.gov/drug/label.json",
+          "params": {
+            "search": "_exists_:drug_interactions",
+            "count": "openfda.generic_name.exact",
+            "limit": 1000
+          },
+          "n_terms": 1000,
+          "disclaimer": "Do not rely on openFDA to make decisions regarding medical care. While we make every effort to ensure that data is accurate, you should assume all results are unvalidated. We may limit or otherwise restrict your access to the API in line with our Terms of Service.",
+          "last_updated": "2026-09-22",
+          "retrieved_utc": "2026-09-22T15:46:44+00:00"
+        }
+      },
+      "note": "openFDA count aggregations return the top 1,000 terms only; ingredients outside the top 1,000 for a given query are absent, which is not the same as zero. FAERS counts reflect reporting volume, not incidence."
+    }
+  }
+}
