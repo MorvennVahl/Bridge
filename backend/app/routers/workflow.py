@@ -8,8 +8,10 @@ an honest state.
 
 from __future__ import annotations
 
+import importlib
+import io
 import json
-import subprocess
+import logging
 import time
 import uuid
 from datetime import UTC, datetime
@@ -119,6 +121,33 @@ def _handle_data_check() -> tuple[str, dict[str, Any], str | None]:
     )
 
 
+def _run_build_module(module_name: str) -> tuple[bool, list[str]]:
+    """Import a bridge.build_*_features module, run its main(), capture its log tail.
+
+    Runs in-process — avoids ~2s of `uv run` startup per script and gives us the
+    real Python traceback if something breaks instead of stderr scraping.
+    """
+    buffer = io.StringIO()
+    handler = logging.StreamHandler(buffer)
+    handler.setLevel(logging.INFO)
+    root = logging.getLogger()
+    root.addHandler(handler)
+    prev_level = root.level
+    root.setLevel(logging.INFO)
+    try:
+        mod = importlib.import_module(module_name)
+        mod.main()
+        ok = True
+    except Exception as e:
+        buffer.write(f"\n{type(e).__name__}: {e}\n")
+        ok = False
+    finally:
+        root.removeHandler(handler)
+        root.setLevel(prev_level)
+    log_tail = [ln for ln in buffer.getvalue().strip().splitlines()[-6:] if ln]
+    return ok, log_tail
+
+
 def _handle_build_features() -> tuple[str, dict[str, Any], str | None]:
     metrics: dict[str, Any] = {}
     for module in (
@@ -126,22 +155,15 @@ def _handle_build_features() -> tuple[str, dict[str, Any], str | None]:
         "bridge.build_disease_features",
         "bridge.build_condition_features",
     ):
-        proc = subprocess.run(
-            ["uv", "run", "python", "-m", module],
-            capture_output=True,
-            text=True,
-            timeout=180,
-        )
-        metrics[module] = {
-            "returncode": proc.returncode,
-            "stderr_tail": proc.stderr.strip().splitlines()[-5:] if proc.stderr else [],
-        }
-        if proc.returncode != 0:
-            return "failed", metrics, f"{module} exited {proc.returncode}"
+        ok, log_tail = _run_build_module(module)
+        metrics[module] = {"ok": ok, "log_tail": log_tail}
+        if not ok:
+            return "failed", metrics, f"{module} raised — see log_tail"
 
     derived = DATA_DIR / "derived"
     parquets = sorted(derived.glob("*.parquet")) if derived.is_dir() else []
     metrics["outputs"] = [{"name": p.name, "size_bytes": p.stat().st_size} for p in parquets]
+
     return "ok", metrics, None
 
 

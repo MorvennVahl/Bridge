@@ -22,3 +22,8 @@ data/derived/
 node_modules/
 frontend/dist/
 frontend/.vite/
+
+# Secrets — never commit API keys or credentials
+.env
+.env.*
+!.env.example
