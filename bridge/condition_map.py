@@ -83,7 +83,9 @@ def condition_concept_codes() -> pd.Series:
     Without this, `map_conditions` runs with `concept_codes=None` and silently skips tier 1,
     which costs roughly a third of the achievable coverage with no error to indicate it.
     """
-    return load_condition_concepts().set_index("condition_concept_id")["concept_code"]
+    # Wrapped in pd.Series because pyright types DataFrame.__getitem__ as possibly
+    # returning a DataFrame; a single string key always yields a Series.
+    return pd.Series(load_condition_concepts().set_index("condition_concept_id")["concept_code"])
 
 
 def load_hpo_terms() -> dict[str, dict]:
