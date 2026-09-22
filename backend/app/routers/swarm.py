@@ -144,6 +144,7 @@ def _append_run(run: SwarmRun) -> None:
     EXPERIMENTS_DIR.mkdir(parents=True, exist_ok=True)
     with _append_lock, SWARM_LOG.open("a", encoding="utf-8") as fh:
         fh.write(run.model_dump_json() + "\n")
+    _mark_scored(run.ingredient_concept_id, run.condition_concept_id)
 
 
 def _build_context(ingredient_concept_id: int, condition_concept_id: int) -> dict[str, Any]:
@@ -232,8 +233,8 @@ def _parse_agent_json(text: str) -> dict[str, Any] | None:
 async def _call_agent(client: Any, agent: Agent, user_content: str) -> AgentResult:
     t0 = time.monotonic()
     try:
-        resp = await asyncio.to_thread(
-            client.messages.create,
+        # client is an AsyncAnthropic — native await, no thread wrapper needed.
+        resp = await client.messages.create(
             model=MODEL,
             max_tokens=600,
             system=agent.system + "\n\n" + _RESPONSE_INSTRUCTIONS,
@@ -342,20 +343,42 @@ _loop_state: dict[str, Any] = {
     "task": None,
 }
 
+# In-memory set of scored pairs. Populated once (via _scored_pairs_initial_load) and
+# then kept fresh by appending in _append_run. Avoids re-scanning swarm.jsonl every
+# loop iteration. Only correct in single-process uvicorn — that's the intended runtime.
+_scored_pairs: set[tuple[int, int]] = set()
+_scored_pairs_lock = Lock()
+_scored_pairs_loaded = False
+
+
+def _scored_pairs_initial_load() -> None:
+    """One-time cold load from swarm.jsonl. Idempotent."""
+    global _scored_pairs_loaded
+    with _scored_pairs_lock:
+        if _scored_pairs_loaded:
+            return
+        if SWARM_LOG.is_file():
+            with SWARM_LOG.open("r", encoding="utf-8") as fh:
+                for line in fh:
+                    try:
+                        d = json.loads(line)
+                        _scored_pairs.add(
+                            (int(d["ingredient_concept_id"]), int(d["condition_concept_id"]))
+                        )
+                    except Exception:
+                        continue
+        _scored_pairs_loaded = True
+
+
+def _mark_scored(ing: int, cond: int) -> None:
+    with _scored_pairs_lock:
+        _scored_pairs.add((int(ing), int(cond)))
+
 
 def _already_scored_pairs() -> set[tuple[int, int]]:
-    """Set of (ingredient, condition) pairs already in swarm.jsonl."""
-    if not SWARM_LOG.is_file():
-        return set()
-    scored: set[tuple[int, int]] = set()
-    with SWARM_LOG.open("r", encoding="utf-8") as fh:
-        for line in fh:
-            try:
-                d = json.loads(line)
-                scored.add((int(d["ingredient_concept_id"]), int(d["condition_concept_id"])))
-            except Exception:
-                continue
-    return scored
+    _scored_pairs_initial_load()
+    with _scored_pairs_lock:
+        return set(_scored_pairs)
 
 
 def _pick_candidates(limit: int = 200) -> list[tuple[int, int]]:
@@ -443,10 +466,17 @@ async def _loop_body(client: Any) -> None:
         _loop_state["task"] = None
 
 
-@router.post("/loop/start", response_model=LoopStatus)
-async def start_loop(interval_seconds: float = 3.0) -> LoopStatus:
-    if _loop_state["running"]:
-        return LoopStatus(**{k: _loop_state[k] for k in LoopStatus.model_fields})
+_anthropic_client: Any = None
+_anthropic_client_key: str | None = None
+
+
+def _get_async_client() -> Any:
+    """Return a cached AsyncAnthropic tied to the current env key.
+
+    Rebuilt only if the key changes between calls. HTTP-503 if the SDK is
+    missing or the key is unset — no fallback, no fake responses.
+    """
+    global _anthropic_client, _anthropic_client_key
     try:
         import anthropic
     except ImportError as e:
@@ -457,8 +487,18 @@ async def start_loop(interval_seconds: float = 3.0) -> LoopStatus:
             status_code=503,
             detail="ANTHROPIC_API_KEY not set — export it and restart uvicorn",
         )
+    if _anthropic_client is None or _anthropic_client_key != key:
+        _anthropic_client = anthropic.AsyncAnthropic(api_key=key)
+        _anthropic_client_key = key
+    return _anthropic_client
+
+
+@router.post("/loop/start", response_model=LoopStatus)
+async def start_loop(interval_seconds: float = 3.0) -> LoopStatus:
+    if _loop_state["running"]:
+        return LoopStatus(**{k: _loop_state[k] for k in LoopStatus.model_fields})
+    client = _get_async_client()
     _loop_state["interval_seconds"] = max(0.5, float(interval_seconds))
-    client = anthropic.Anthropic(api_key=key)
     _loop_state["task"] = asyncio.create_task(_loop_body(client))
     await asyncio.sleep(0)  # yield so the task registers
     return LoopStatus(**{k: _loop_state[k] for k in LoopStatus.model_fields})
@@ -494,17 +534,7 @@ def list_runs(limit: int = 20) -> list[SwarmRun]:
 
 @router.post("/run", response_model=SwarmRun)
 async def run_swarm(req: SwarmRequest) -> SwarmRun:
-    try:
-        import anthropic
-    except ImportError as e:
-        raise HTTPException(status_code=503, detail=f"anthropic SDK missing: {e}") from e
-
-    key = os.environ.get("ANTHROPIC_API_KEY")
-    if not key:
-        raise HTTPException(
-            status_code=503,
-            detail="ANTHROPIC_API_KEY not set — export it in the shell running uvicorn",
-        )
+    client = _get_async_client()
 
     context = _build_context(req.ingredient_concept_id, req.condition_concept_id)
     user_content = (
@@ -515,7 +545,6 @@ async def run_swarm(req: SwarmRequest) -> SwarmRun:
         "each on [0,1]. Return the JSON schema in your system prompt."
     )
 
-    client = anthropic.Anthropic(api_key=key)
     started = datetime.now(UTC).isoformat()
     results = await asyncio.gather(*[_call_agent(client, a, user_content) for a in AGENTS])
     finished = datetime.now(UTC).isoformat()
