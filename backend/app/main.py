@@ -15,7 +15,7 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.app.data import data_files_present
 from backend.app.models import HealthResponse
-from backend.app.routers import annotations, catalog, compute, predict, tables
+from backend.app.routers import annotations, catalog, compute, predict, swarm, tables, workflow
 
 app = FastAPI(title="Bridge API", version="0.1.0")
 
@@ -32,6 +32,8 @@ app.include_router(predict.router)
 app.include_router(compute.router)
 app.include_router(annotations.router)
 app.include_router(tables.router)
+app.include_router(workflow.router)
+app.include_router(swarm.router)
 
 
 @app.get("/api/health", response_model=HealthResponse, tags=["health"])
