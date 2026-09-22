@@ -84,12 +84,10 @@ def _assert_close(name: str, actual: float, expected: float, tol: float) -> None
 
 def _assert_row_count(name: str, actual: int, expected: int, tol_frac: float) -> None:
     if abs(actual - expected) > tol_frac * expected:
-        raise AssertionError(
-            f"Precondition failed: {name} = {actual} rows (expected ~{expected})"
-        )
+        raise AssertionError(f"Precondition failed: {name} = {actual} rows (expected ~{expected})")
 
 
-def _select_drug_feature_columns(data_dict: "pd.DataFrame") -> list[str]:  # noqa: F821
+def _select_drug_feature_columns(data_dict: pd.DataFrame) -> list[str]:  # noqa: F821
     dd = data_dict[data_dict["table"] == "ingredient_features.csv"]
     dd = dd[dd["block"].isin(INCLUDED_BLOCKS)]
     cols = [c for c in dd["column"].tolist() if c not in EXCLUDED_COLUMNS]
@@ -97,13 +95,13 @@ def _select_drug_feature_columns(data_dict: "pd.DataFrame") -> list[str]:  # noq
 
 
 def _alternating_demean(
-    df: "pd.DataFrame",  # noqa: F821
+    df: pd.DataFrame,  # noqa: F821
     value_col: str,
     drug_col: str,
     cond_col: str,
     tol: float = DEMEAN_TOL,
     max_iter: int = DEMEAN_MAX_ITER,
-) -> tuple["pd.Series", "pd.Series", float, int]:  # noqa: F821
+) -> tuple[pd.Series, pd.Series, float, int]:  # noqa: F821
     """Alternating-demeaning (Gauss-Seidel) two-way fixed effects.
 
     Returns (drug_effect, condition_effect, grand_mean, n_iterations), all
@@ -121,7 +119,11 @@ def _alternating_demean(
     cond_effect = pd.Series(0.0, index=df[cond_col].unique())
 
     work = pd.DataFrame(
-        {drug_col: df[drug_col].to_numpy(), cond_col: df[cond_col].to_numpy(), "z": z_centered.to_numpy()}
+        {
+            drug_col: df[drug_col].to_numpy(),
+            cond_col: df[cond_col].to_numpy(),
+            "z": z_centered.to_numpy(),
+        }
     )
 
     n_iter = 0
@@ -130,13 +132,17 @@ def _alternating_demean(
         # residual after removing current condition effect, demean by drug
         resid_for_drug = work["z"] - work[cond_col].map(cond_effect).to_numpy()
         new_drug_effect = resid_for_drug.groupby(work[drug_col]).mean()
-        drug_shift = (new_drug_effect - drug_effect.reindex(new_drug_effect.index).fillna(0.0)).abs().max()
+        drug_shift = (
+            (new_drug_effect - drug_effect.reindex(new_drug_effect.index).fillna(0.0)).abs().max()
+        )
         drug_effect = new_drug_effect
 
         # residual after removing updated drug effect, demean by condition
         resid_for_cond = work["z"] - work[drug_col].map(drug_effect).to_numpy()
         new_cond_effect = resid_for_cond.groupby(work[cond_col]).mean()
-        cond_shift = (new_cond_effect - cond_effect.reindex(new_cond_effect.index).fillna(0.0)).abs().max()
+        cond_shift = (
+            (new_cond_effect - cond_effect.reindex(new_cond_effect.index).fillna(0.0)).abs().max()
+        )
         cond_effect = new_cond_effect
 
         max_shift = float(np.nanmax([drug_shift, cond_shift]))
@@ -157,13 +163,14 @@ def run(exp_id: str) -> dict[str, float]:
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger("exp04")
 
+    import matplotlib
     import numpy as np
     import pandas as pd
-    from scipy.stats import spearmanr, pearsonr
-    from sklearn.ensemble import HistGradientBoostingRegressor, HistGradientBoostingClassifier
+    from scipy.stats import pearsonr, spearmanr
+    from sklearn.ensemble import HistGradientBoostingClassifier, HistGradientBoostingRegressor
     from sklearn.metrics import average_precision_score
     from sklearn.model_selection import GroupKFold
-    import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
 
@@ -192,14 +199,18 @@ def run(exp_id: str) -> dict[str, float]:
     validate = pd.read_csv("/data/splits/validate.csv")
 
     # ---- Step 2: restrict to case_count >= 3 and faers_prr > 0 --------------------
-    train_sub = train[(train["faers_case_count"] >= CASE_COUNT_FLOOR) & (train["faers_prr"] > 0)].copy()
+    train_sub = train[
+        (train["faers_case_count"] >= CASE_COUNT_FLOOR) & (train["faers_prr"] > 0)
+    ].copy()
     validate_sub = validate[
         (validate["faers_case_count"] >= CASE_COUNT_FLOOR) & (validate["faers_prr"] > 0)
     ].copy()
 
     log.info("train_sub=%d validate_sub=%d", len(train_sub), len(validate_sub))
     _assert_row_count("n_train_rows", len(train_sub), EXPECTED_TRAIN_SUBSET_ROWS, TOLERANCE_ROWS)
-    _assert_row_count("n_validate_rows", len(validate_sub), EXPECTED_VALIDATE_SUBSET_ROWS, TOLERANCE_ROWS)
+    _assert_row_count(
+        "n_validate_rows", len(validate_sub), EXPECTED_VALIDATE_SUBSET_ROWS, TOLERANCE_ROWS
+    )
 
     train_sub["z"] = np.log(train_sub["faers_prr"])
     validate_sub["z"] = np.log(validate_sub["faers_prr"])
@@ -276,24 +287,28 @@ def run(exp_id: str) -> dict[str, float]:
     available_drug_cols = [c for c in drug_feat_cols if c in ingredient_features.columns]
     missing_drug_cols = sorted(set(drug_feat_cols) - set(available_drug_cols))
     if missing_drug_cols:
-        log.warning("data_dictionary lists %d drug columns not present in ingredient_features.csv: %s",
-                    len(missing_drug_cols), missing_drug_cols[:10])
+        log.warning(
+            "data_dictionary lists %d drug columns not present in ingredient_features.csv: %s",
+            len(missing_drug_cols),
+            missing_drug_cols[:10],
+        )
 
-    drug_features = ingredient_features[["omop_concept_id"] + available_drug_cols].copy()
-    drug_features["has_chembl_match"] = ingredient_features["chembl_id"].notna() if "chembl_id" in ingredient_features.columns else False
+    drug_features = ingredient_features[["omop_concept_id", *available_drug_cols]].copy()
+    drug_features["has_chembl_match"] = (
+        ingredient_features["chembl_id"].notna()
+        if "chembl_id" in ingredient_features.columns
+        else False
+    )
     drug_features = drug_features.rename(columns={"omop_concept_id": "ingredient_concept_id"})
 
     condition_features = pd.read_csv("/data/condition/condition_features_basic.csv")
     condition_group_long = pd.read_csv("/data/condition/condition_group_long.csv")
-    group_onehot = (
-        condition_group_long.assign(val=1)
-        .pivot_table(
-            index="condition_concept_id",
-            columns=["group_source", "group_label"],
-            values="val",
-            aggfunc="max",
-            fill_value=0,
-        )
+    group_onehot = condition_group_long.assign(val=1).pivot_table(
+        index="condition_concept_id",
+        columns=["group_source", "group_label"],
+        values="val",
+        aggfunc="max",
+        fill_value=0,
     )
     group_onehot.columns = [f"group__{src}__{lbl}" for src, lbl in group_onehot.columns]
     group_onehot = group_onehot.reset_index()
@@ -319,11 +334,29 @@ def run(exp_id: str) -> dict[str, float]:
 
     group_cols = [c for c in group_onehot.columns if c != "condition_concept_id"]
     non_feature_cols = {
-        "ingredient_concept_id", "condition_concept_id", "in_faers", "in_semmeddb", "in_eu_label",
-        "faers_case_count", "faers_prr", "faers_chi_square", "semmeddb_harm_sentences",
-        "semmeddb_benefit_sentences", "semmeddb_negated_sentences", "y_faers_signal",
-        "y_semmeddb_causes", "y_semmeddb_treats", "y_any_harm", "fold", "group_key", "z",
-        "drug_offset", "condition_offset", "drug_unseen", "condition_unseen", "residual",
+        "ingredient_concept_id",
+        "condition_concept_id",
+        "in_faers",
+        "in_semmeddb",
+        "in_eu_label",
+        "faers_case_count",
+        "faers_prr",
+        "faers_chi_square",
+        "semmeddb_harm_sentences",
+        "semmeddb_benefit_sentences",
+        "semmeddb_negated_sentences",
+        "y_faers_signal",
+        "y_semmeddb_causes",
+        "y_semmeddb_treats",
+        "y_any_harm",
+        "fold",
+        "group_key",
+        "z",
+        "drug_offset",
+        "condition_offset",
+        "drug_unseen",
+        "condition_unseen",
+        "residual",
         "condition_name",
     }
     feature_cols = [c for c in train_sub.columns if c not in non_feature_cols]
@@ -335,8 +368,8 @@ def run(exp_id: str) -> dict[str, float]:
     feature_cols = numeric_feature_cols
     log.info("Using %d feature columns (%d group one-hots)", len(feature_cols), len(group_cols))
 
-    X_train = train_sub[feature_cols].apply(pd.to_numeric, errors="coerce").astype("float32")
-    X_validate = validate_sub[feature_cols].apply(pd.to_numeric, errors="coerce").astype("float32")
+    X_train = train_sub[feature_cols].apply(pd.to_numeric, errors="coerce").astype("float32")  # noqa: N806 -- conventional sklearn feature-matrix name
+    X_validate = validate_sub[feature_cols].apply(pd.to_numeric, errors="coerce").astype("float32")  # noqa: N806
     y_train_res = train_sub["residual"].to_numpy()
     y_validate_res = validate_sub["residual"].to_numpy()
     groups_train = train_sub["group_key"].to_numpy()
@@ -347,8 +380,12 @@ def run(exp_id: str) -> dict[str, float]:
     cv_spearman = []
     for fold_i, (tr_idx, te_idx) in enumerate(gkf.split(X_train, y_train_res, groups=groups_train)):
         reg = HistGradientBoostingRegressor(
-            max_iter=200, learning_rate=0.06, max_leaf_nodes=63,
-            early_stopping=False, random_state=0, loss="squared_error",
+            max_iter=200,
+            learning_rate=0.06,
+            max_leaf_nodes=63,
+            early_stopping=False,
+            random_state=0,
+            loss="squared_error",
         )
         reg.fit(X_train.iloc[tr_idx], y_train_res[tr_idx])
         pred = reg.predict(X_train.iloc[te_idx])
@@ -360,8 +397,12 @@ def run(exp_id: str) -> dict[str, float]:
     train_cv_spearman_spread = float(np.std(cv_spearman))
 
     reg_full = HistGradientBoostingRegressor(
-        max_iter=200, learning_rate=0.06, max_leaf_nodes=63,
-        early_stopping=False, random_state=0, loss="squared_error",
+        max_iter=200,
+        learning_rate=0.06,
+        max_leaf_nodes=63,
+        early_stopping=False,
+        random_state=0,
+        loss="squared_error",
     )
     reg_full.fit(X_train, y_train_res)
     pred_validate_res = reg_full.predict(X_validate)
@@ -372,7 +413,12 @@ def run(exp_id: str) -> dict[str, float]:
     ss_tot_model = float(((y_validate_res - y_validate_res.mean()) ** 2).sum())
     validate_r2 = 1.0 - ss_res_model / ss_tot_model if ss_tot_model > 0 else float("nan")
 
-    log.info("Validate: spearman=%.4f pearson_r=%.4f r2=%.4f", validate_spearman_residual, validate_pearson_r, validate_r2)
+    log.info(
+        "Validate: spearman=%.4f pearson_r=%.4f r2=%.4f",
+        validate_spearman_residual,
+        validate_pearson_r,
+        validate_r2,
+    )
 
     residual_model_df = pd.DataFrame(
         [
@@ -398,10 +444,15 @@ def run(exp_id: str) -> dict[str, float]:
     try:
         log.info("Fitting HistGradientBoostingClassifier on y_faers_signal with grouped 3-fold CV")
         cv_ap = []
-        for fold_i, (tr_idx, te_idx) in enumerate(gkf.split(X_train, y_train_bin, groups=groups_train)):
+        for fold_i, (tr_idx, te_idx) in enumerate(
+            gkf.split(X_train, y_train_bin, groups=groups_train)
+        ):
             clf = HistGradientBoostingClassifier(
-                max_iter=200, learning_rate=0.06, max_leaf_nodes=63,
-                early_stopping=False, random_state=0,
+                max_iter=200,
+                learning_rate=0.06,
+                max_leaf_nodes=63,
+                early_stopping=False,
+                random_state=0,
             )
             clf.fit(X_train.iloc[tr_idx], y_train_bin[tr_idx])
             proba = clf.predict_proba(X_train.iloc[te_idx])[:, 1]
@@ -417,8 +468,11 @@ def run(exp_id: str) -> dict[str, float]:
         train_cv_ap_mean = float("nan")
 
     clf_full = HistGradientBoostingClassifier(
-        max_iter=200, learning_rate=0.06, max_leaf_nodes=63,
-        early_stopping=False, random_state=0,
+        max_iter=200,
+        learning_rate=0.06,
+        max_leaf_nodes=63,
+        early_stopping=False,
+        random_state=0,
     )
     clf_full.fit(X_train, y_train_bin)
     pred_validate_bin_proba = clf_full.predict_proba(X_validate)[:, 1]
@@ -427,8 +481,11 @@ def run(exp_id: str) -> dict[str, float]:
     # degree-only baseline AP on this subset
     degree_only_cols = ["drug_degree", "condition_degree"]
     clf_degree = HistGradientBoostingClassifier(
-        max_iter=200, learning_rate=0.06, max_leaf_nodes=63,
-        early_stopping=False, random_state=0,
+        max_iter=200,
+        learning_rate=0.06,
+        max_leaf_nodes=63,
+        early_stopping=False,
+        random_state=0,
     )
     clf_degree.fit(X_train[degree_only_cols], y_train_bin)
     pred_degree_proba = clf_degree.predict_proba(X_validate[degree_only_cols])[:, 1]
@@ -443,10 +500,30 @@ def run(exp_id: str) -> dict[str, float]:
 
     target_comparison_df = pd.DataFrame(
         [
-            {"trained_on": "residual", "evaluated_against": "residual", "metric": "spearman_rho", "value": resid_model_vs_residual_rho},
-            {"trained_on": "residual", "evaluated_against": "binary_flag", "metric": "average_precision", "value": resid_model_vs_binary_ap},
-            {"trained_on": "binary_flag", "evaluated_against": "residual", "metric": "spearman_rho", "value": bin_model_vs_residual_rho},
-            {"trained_on": "binary_flag", "evaluated_against": "binary_flag", "metric": "average_precision", "value": bin_model_vs_binary_ap},
+            {
+                "trained_on": "residual",
+                "evaluated_against": "residual",
+                "metric": "spearman_rho",
+                "value": resid_model_vs_residual_rho,
+            },
+            {
+                "trained_on": "residual",
+                "evaluated_against": "binary_flag",
+                "metric": "average_precision",
+                "value": resid_model_vs_binary_ap,
+            },
+            {
+                "trained_on": "binary_flag",
+                "evaluated_against": "residual",
+                "metric": "spearman_rho",
+                "value": bin_model_vs_residual_rho,
+            },
+            {
+                "trained_on": "binary_flag",
+                "evaluated_against": "binary_flag",
+                "metric": "average_precision",
+                "value": bin_model_vs_binary_ap,
+            },
         ]
     )
     target_comparison_df.to_csv(out / f"{exp_id}_target_comparison.csv", index=False)
@@ -468,25 +545,76 @@ def run(exp_id: str) -> dict[str, float]:
             rho, _ = spearmanr(grp["pred_residual"], grp["residual"])
         else:
             rho = float("nan")
-        subgroup_rows.append({"subgroup_type": "case_count_stratum", "subgroup": stratum, "n": len(grp), "validate_spearman": rho})
+        subgroup_rows.append(
+            {
+                "subgroup_type": "case_count_stratum",
+                "subgroup": stratum,
+                "n": len(grp),
+                "validate_spearman": rho,
+            }
+        )
 
     if "is_mapped" in validate_sub.columns:
         for val, grp in validate_sub.groupby("is_mapped"):
-            rho, _ = spearmanr(grp["pred_residual"], grp["residual"]) if len(grp) > 1 else (float("nan"), None)
-            subgroup_rows.append({"subgroup_type": "is_mapped", "subgroup": str(val), "n": len(grp), "validate_spearman": rho})
+            rho, _ = (
+                spearmanr(grp["pred_residual"], grp["residual"])
+                if len(grp) > 1
+                else (float("nan"), None)
+            )
+            subgroup_rows.append(
+                {
+                    "subgroup_type": "is_mapped",
+                    "subgroup": str(val),
+                    "n": len(grp),
+                    "validate_spearman": rho,
+                }
+            )
 
     if "arm" in validate_sub.columns:
         for val, grp in validate_sub.groupby("arm"):
-            rho, _ = spearmanr(grp["pred_residual"], grp["residual"]) if len(grp) > 1 else (float("nan"), None)
-            subgroup_rows.append({"subgroup_type": "arm", "subgroup": str(val), "n": len(grp), "validate_spearman": rho})
+            rho, _ = (
+                spearmanr(grp["pred_residual"], grp["residual"])
+                if len(grp) > 1
+                else (float("nan"), None)
+            )
+            subgroup_rows.append(
+                {
+                    "subgroup_type": "arm",
+                    "subgroup": str(val),
+                    "n": len(grp),
+                    "validate_spearman": rho,
+                }
+            )
 
     for val, grp in validate_sub.groupby("drug_unseen"):
-        rho, _ = spearmanr(grp["pred_residual"], grp["residual"]) if len(grp) > 1 else (float("nan"), None)
-        subgroup_rows.append({"subgroup_type": "drug_unseen_in_train", "subgroup": str(val), "n": len(grp), "validate_spearman": rho})
+        rho, _ = (
+            spearmanr(grp["pred_residual"], grp["residual"])
+            if len(grp) > 1
+            else (float("nan"), None)
+        )
+        subgroup_rows.append(
+            {
+                "subgroup_type": "drug_unseen_in_train",
+                "subgroup": str(val),
+                "n": len(grp),
+                "validate_spearman": rho,
+            }
+        )
 
     for val, grp in validate_sub.groupby("condition_unseen"):
-        rho, _ = spearmanr(grp["pred_residual"], grp["residual"]) if len(grp) > 1 else (float("nan"), None)
-        subgroup_rows.append({"subgroup_type": "condition_unseen_in_train", "subgroup": str(val), "n": len(grp), "validate_spearman": rho})
+        rho, _ = (
+            spearmanr(grp["pred_residual"], grp["residual"])
+            if len(grp) > 1
+            else (float("nan"), None)
+        )
+        subgroup_rows.append(
+            {
+                "subgroup_type": "condition_unseen_in_train",
+                "subgroup": str(val),
+                "n": len(grp),
+                "validate_spearman": rho,
+            }
+        )
 
     subgroups_df = pd.DataFrame(subgroup_rows)
     subgroups_df.to_csv(out / f"{exp_id}_subgroups.csv", index=False)
@@ -496,7 +624,9 @@ def run(exp_id: str) -> dict[str, float]:
     hb = ax.hexbin(pred_validate_res, y_validate_res, gridsize=50, cmap="viridis", mincnt=1)
     ax.set_xlabel("predicted residual")
     ax.set_ylabel("actual residual")
-    ax.set_title(f"exp04 predicted vs actual residual (validate)\nSpearman rho = {validate_spearman_residual:.3f}")
+    ax.set_title(
+        f"exp04 predicted vs actual residual (validate)\nSpearman rho = {validate_spearman_residual:.3f}"
+    )
     fig.colorbar(hb, ax=ax, label="count")
     fig.tight_layout()
     fig.savefig(out / f"{exp_id}_residual_scatter.png", dpi=150)
@@ -508,8 +638,8 @@ def run(exp_id: str) -> dict[str, float]:
         "validate_average_precision": float(validate_ap),
         "baseline_degree_only_ap": float(baseline_degree_only_ap),
         "twoway_r2": float(twoway_r2),
-        "n_train_rows": int(len(train_sub)),
-        "n_validate_rows": int(len(validate_sub)),
+        "n_train_rows": len(train_sub),
+        "n_validate_rows": len(validate_sub),
     }
 
     if findings_fallback_notes:
