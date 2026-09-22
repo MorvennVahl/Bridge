@@ -100,8 +100,15 @@ def run(exp_id: str) -> dict[str, float]:
 def main() -> None:
     from bridge import labnotebook as ln
 
-    exp = ln.register(agent="exp01", title=..., hypothesis=..., approach=...,
-                      label="y_faers_signal", features=[...], split="train/validate")
+    exp = ln.register(
+        agent="exp01",
+        title=...,
+        hypothesis=...,
+        approach=...,
+        label="y_faers_signal",
+        features=[...],
+        split="train/validate",
+    )
     metrics = run.remote(exp)
     print(metrics)
     ln.complete(exp, metrics=metrics, findings=..., artifacts=[...], next_steps=...)

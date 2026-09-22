@@ -49,8 +49,10 @@ QUERY = """query($efoId:String!,$index:Int!,$size:Int!){
 def gql(variables: dict, timeout: int = 90) -> dict:
     payload = json.dumps({"query": QUERY, "variables": variables}).encode()
     req = urllib.request.Request(
-        ENDPOINT, data=payload,
-        headers={"Content-Type": "application/json", "Accept": "application/json"})
+        ENDPOINT,
+        data=payload,
+        headers={"Content-Type": "application/json", "Accept": "application/json"},
+    )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         return json.loads(resp.read())
 
@@ -64,25 +66,32 @@ def fetch_one(disease_id: str) -> dict:
             if dz is None:
                 # Not an error: many of our mapped terms are not in the Open
                 # Targets disease index at all (notably most HPO terms).
-                return {"disease_id": disease_id, "absent": True,
-                        "n_total": 0, "targets": []}
+                return {"disease_id": disease_id, "absent": True, "n_total": 0, "targets": []}
             assoc = dz.get("associatedTargets") or {}
-            targets = [{
-                "ensembl_gene_id": row["target"]["id"],
-                "gene_symbol": row["target"].get("approvedSymbol"),
-                "score": row["score"],
-                "datatype_scores": {s["id"]: s["score"]
-                                    for s in (row.get("datatypeScores") or [])},
-            } for row in (assoc.get("rows") or [])]
-            return {"disease_id": disease_id, "disease_name": dz.get("name"),
-                    "absent": False, "n_total": assoc.get("count", 0),
-                    "n_fetched": len(targets),
-                    "truncated": assoc.get("count", 0) > len(targets),
-                    "targets": targets}
+            targets = [
+                {
+                    "ensembl_gene_id": row["target"]["id"],
+                    "gene_symbol": row["target"].get("approvedSymbol"),
+                    "score": row["score"],
+                    "datatype_scores": {
+                        s["id"]: s["score"] for s in (row.get("datatypeScores") or [])
+                    },
+                }
+                for row in (assoc.get("rows") or [])
+            ]
+            return {
+                "disease_id": disease_id,
+                "disease_name": dz.get("name"),
+                "absent": False,
+                "n_total": assoc.get("count", 0),
+                "n_fetched": len(targets),
+                "truncated": assoc.get("count", 0) > len(targets),
+                "targets": targets,
+            }
         except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
             if attempt == RETRIES - 1:
                 return {"disease_id": disease_id, "error": f"{type(exc).__name__}: {exc}"}
-            time.sleep(2 ** attempt)
+            time.sleep(2**attempt)
     return {"disease_id": disease_id, "error": "exhausted retries"}
 
 
@@ -103,11 +112,10 @@ def done_ids(path: Path) -> set[str]:
 
 def main() -> int:
     ids_file, out_file = Path(sys.argv[1]), Path(sys.argv[2])
-    wanted = [ln.strip() for ln in open(ids_file) if ln.strip()]
+    wanted = [line.strip() for line in ids_file.read_text().splitlines() if line.strip()]
     already = done_ids(out_file)
     todo = [i for i in wanted if i not in already]
-    print(f"wanted {len(wanted)} | already done {len(already)} | to fetch {len(todo)}",
-          flush=True)
+    print(f"wanted {len(wanted)} | already done {len(already)} | to fetch {len(todo)}", flush=True)
 
     n_ok = n_absent = n_err = 0
     with open(out_file, "a") as out, ThreadPoolExecutor(WORKERS) as pool:
@@ -121,8 +129,10 @@ def main() -> int:
                 n_ok += 1
             if n % 100 == 0:
                 out.flush()
-                print(f"  {n}/{len(todo)} | with targets {n_ok} | "
-                      f"absent {n_absent} | errors {n_err}", flush=True)
+                print(
+                    f"  {n}/{len(todo)} | with targets {n_ok} | absent {n_absent} | errors {n_err}",
+                    flush=True,
+                )
 
     print(f"done: with targets {n_ok} | absent {n_absent} | errors {n_err}", flush=True)
     return 0

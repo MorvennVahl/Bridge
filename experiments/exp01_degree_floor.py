@@ -1,4 +1,4 @@
-"""exp01 — The degree floor, and whether it survives the label definition.
+"""exp01 â€” The degree floor, and whether it survives the label definition.
 
 Implements experiments/exp01_degree_floor.md. See that file for the full method,
 budget, deliverables, and reporting requirements.
@@ -96,12 +96,16 @@ def run(exp_id: str) -> dict[str, float]:
                 f"expected {expected:.4f} (+/- {RATE_TOL}). The split was likely "
                 f"rebuilt underneath this experiment."
             )
-        log.info("label %s: train positive rate %.4f (expected %.4f) OK", label_id, observed, expected)
+        log.info(
+            "label %s: train positive rate %.4f (expected %.4f) OK", label_id, observed, expected
+        )
 
     # ---- degree terms, TRAIN ONLY, then applied to validate ---------------
     log.info("computing degree terms on train only")
     drug_degree_train = train.groupby("ingredient_concept_id")["condition_concept_id"].nunique()
-    condition_degree_train = train.groupby("condition_concept_id")["ingredient_concept_id"].nunique()
+    condition_degree_train = train.groupby("condition_concept_id")[
+        "ingredient_concept_id"
+    ].nunique()
 
     drug_degree_median = float(drug_degree_train.median())
     condition_degree_median = float(condition_degree_train.median())
@@ -141,10 +145,12 @@ def run(exp_id: str) -> dict[str, float]:
         for df in (train, validate):
             for c in ["is_mapped", "arm", "best_match_tier"]:
                 if c in cond_feat.columns:
-                    df[c] = df["condition_concept_id"].map(cond_feat.set_index("condition_concept_id")[c])
+                    df[c] = df["condition_concept_id"].map(
+                        cond_feat.set_index("condition_concept_id")[c]
+                    )
     else:
         log.warning(
-            "condition_features_basic.csv is ABSENT — running with the two "
+            "condition_features_basic.csv is ABSENT â€” running with the two "
             "train-derived degree terms only, per the spec's fallback instruction. "
             "The record_count row of results tables will be left empty."
         )
@@ -170,7 +176,12 @@ def run(exp_id: str) -> dict[str, float]:
             max_iter=200, learning_rate=0.06, max_leaf_nodes=63, early_stopping=False
         )
 
-    def grouped_cv_ap(X: pd.DataFrame, y: pd.Series, groups: pd.Series, model_fn) -> tuple[float, float]:
+    def grouped_cv_ap(
+        X: pd.DataFrame,  # noqa: N803 -- conventional sklearn feature-matrix name
+        y: pd.Series,
+        groups: pd.Series,
+        model_fn,
+    ) -> tuple[float, float]:
         gkf = GroupKFold(n_splits=3)
         aps = []
         for train_idx, test_idx in gkf.split(X, y, groups=groups):
@@ -198,8 +209,8 @@ def run(exp_id: str) -> dict[str, float]:
         prevalence_val = float(y_val.mean())
         label_prevalence_validate[label_id] = prevalence_val
 
-        X_train_full = train[feature_cols]
-        X_val_full = validate[feature_cols]
+        X_train_full = train[feature_cols]  # noqa: N806 -- conventional sklearn feature-matrix name
+        X_val_full = validate[feature_cols]  # noqa: N806
 
         for model_name, model_fn in (("logreg", make_logreg), ("histgbm", make_histgbm)):
             cv_ap_mean, cv_ap_std = grouped_cv_ap(X_train_full, y_train, groups_train, model_fn)
@@ -233,13 +244,15 @@ def run(exp_id: str) -> dict[str, float]:
         # single-feature fits (logreg only, one feature at a time)
         single_feature_aps: dict[str, float] = {}
         for feat_col in single_feature_cols:
-            X_train_single = train[[feat_col]]
-            X_val_single = validate[[feat_col]]
+            X_train_single = train[[feat_col]]  # noqa: N806
+            X_val_single = validate[[feat_col]]  # noqa: N806
             m = make_logreg()
             m.fit(X_train_single, y_train)
             proba_val = m.predict_proba(X_val_single)[:, 1]
             val_ap = average_precision_score(y_val, proba_val)
-            cv_ap_mean, cv_ap_std = grouped_cv_ap(X_train_single, y_train, groups_train, make_logreg)
+            cv_ap_mean, cv_ap_std = grouped_cv_ap(
+                X_train_single, y_train, groups_train, make_logreg
+            )
 
             feat_name = single_feature_names[feat_col]
             single_feature_aps[feat_name] = val_ap
@@ -273,7 +286,12 @@ def run(exp_id: str) -> dict[str, float]:
     ranking_df = pd.DataFrame(ranking_rows)  # rows: feature name, cols: label id
     if not have_condition_features:
         ranking_df = ranking_df.reindex(
-            index=list(ranking_df.index) + (["condition_record_count"] if "condition_record_count" not in ranking_df.index else [])
+            index=list(ranking_df.index)
+            + (
+                ["condition_record_count"]
+                if "condition_record_count" not in ranking_df.index
+                else []
+            )
         )
     label_ids = list(LABEL_DEFS.keys())
     tau_records = []
@@ -324,7 +342,7 @@ def run(exp_id: str) -> dict[str, float]:
     ax.plot([0, 1], [0, 1], linestyle="--", color="gray", label="perfect calibration")
     ax.set_xlabel("mean predicted probability")
     ax.set_ylabel("observed fraction positive")
-    ax.set_title(f"Calibration — Evans label (y_faers_signal), validate, {exp_id}")
+    ax.set_title(f"Calibration â€” Evans label (y_faers_signal), validate, {exp_id}")
     ax.legend()
     calibration_path = out / f"{exp_id}_calibration.png"
     fig.savefig(calibration_path, dpi=150, bbox_inches="tight")
@@ -348,7 +366,7 @@ def run(exp_id: str) -> dict[str, float]:
                     {
                         "subgroup_col": subgroup_col,
                         "subgroup_value": value,
-                        "n": int(len(grp)),
+                        "n": len(grp),
                         "prevalence": float(grp[LABEL_DEFS["evans"]].mean()),
                         "validate_average_precision": ap,
                     }
@@ -375,7 +393,9 @@ def run(exp_id: str) -> dict[str, float]:
 
     metrics: dict[str, float] = {
         "validate_average_precision": validate_ap_evans,
-        "train_cv_average_precision": float(evans_train_cv_ap) if evans_train_cv_ap is not None else float("nan"),
+        "train_cv_average_precision": float(evans_train_cv_ap)
+        if evans_train_cv_ap is not None
+        else float("nan"),
         "baseline_degree_only_ap": validate_ap_evans,
         "validate_prevalence_evans": validate_prevalence_evans,
         "kendall_tau_mean": mean_tau,

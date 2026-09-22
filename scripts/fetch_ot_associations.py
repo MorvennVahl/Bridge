@@ -24,8 +24,10 @@ from pathlib import Path
 import pandas as pd
 import pyarrow.parquet as pq
 
-BASE = ("https://ftp.ebi.ac.uk/pub/databases/opentargets/platform/latest/output/"
-        "association_by_datatype_indirect/")
+BASE = (
+    "https://ftp.ebi.ac.uk/pub/databases/opentargets/platform/latest/output/"
+    "association_by_datatype_indirect/"
+)
 
 
 def part_names() -> list[str]:
@@ -39,7 +41,7 @@ def main() -> int:
     scratch = Path(sys.argv[3]) if len(sys.argv) > 3 else Path(tempfile.mkdtemp())
     scratch.mkdir(parents=True, exist_ok=True)
 
-    wanted = {ln.strip() for ln in open(ids_file) if ln.strip()}
+    wanted = {line.strip() for line in ids_file.read_text().splitlines() if line.strip()}
     print(f"wanted disease ids: {len(wanted)}", flush=True)
 
     parts = part_names()
@@ -61,11 +63,17 @@ def main() -> int:
             # scratch lives in the session workspace, never in a granted host folder
             os.unlink(tmp)
 
-    res = (pd.concat(kept, ignore_index=True) if kept
-           else pd.DataFrame(columns=["diseaseId", "targetId", "datatypeId", "score"]))
+    res = (
+        pd.concat(kept, ignore_index=True)
+        if kept
+        else pd.DataFrame(columns=["diseaseId", "targetId", "datatypeId", "score"])
+    )
     res.to_parquet(out_file, index=False)
-    print(f"total rows: {len(res)} | diseases: {res.diseaseId.nunique()} "
-          f"| targets: {res.targetId.nunique()}", flush=True)
+    print(
+        f"total rows: {len(res)} | diseases: {res.diseaseId.nunique()} "
+        f"| targets: {res.targetId.nunique()}",
+        flush=True,
+    )
     return 0
 
 
