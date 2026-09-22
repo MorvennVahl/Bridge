@@ -12,7 +12,8 @@ analysis needs.
 
   1  sctid_xref     SNOMED concept_code == an SCTID cross-reference in Open
                     Targets' disease index or in the MONDO SSSOM mapping set.
-                    Requires data/condition_concept.csv (OMOP vocabulary export).
+                    Codes come from `condition_concept_codes()`, which reads the
+                    OMOP vocabulary export at data/ref/omop/concept.csv.
   2  label_exact    normalised condition name == normalised ontology label or
                     exact/narrow synonym.
   3  token_exact    same after dropping stopwords and sorting tokens, which
@@ -68,6 +69,20 @@ def token_key(normalised: str) -> str:
 
 def load_open_targets_diseases() -> pd.DataFrame:
     return pd.read_parquet(REF / "ot" / "disease__disease.parquet")
+
+
+def load_condition_concepts() -> pd.DataFrame:
+    """The OMOP vocabulary export for the CEM conditions (5,631 rows, all SNOMED)."""
+    return pd.read_csv(REF / "omop" / "concept.csv", dtype={"concept_code": str})
+
+
+def condition_concept_codes() -> pd.Series:
+    """`condition_concept_id` -> SNOMED `concept_code`, ready to pass to `map_conditions`.
+
+    Without this, `map_conditions` runs with `concept_codes=None` and silently skips tier 1,
+    which costs roughly a third of the achievable coverage with no error to indicate it.
+    """
+    return load_condition_concepts().set_index("condition_concept_id")["concept_code"]
 
 
 def load_hpo_terms() -> dict[str, dict]:
