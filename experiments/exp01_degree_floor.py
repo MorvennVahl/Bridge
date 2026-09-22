@@ -1,4 +1,4 @@
-"""exp01 — The degree floor, and whether it survives the label definition.
+"""exp01 â€” The degree floor, and whether it survives the label definition.
 
 Implements experiments/exp01_degree_floor.md. See that file for the full method,
 budget, deliverables, and reporting requirements.
@@ -150,7 +150,7 @@ def run(exp_id: str) -> dict[str, float]:
                     )
     else:
         log.warning(
-            "condition_features_basic.csv is ABSENT — running with the two "
+            "condition_features_basic.csv is ABSENT â€” running with the two "
             "train-derived degree terms only, per the spec's fallback instruction. "
             "The record_count row of results tables will be left empty."
         )
@@ -342,7 +342,7 @@ def run(exp_id: str) -> dict[str, float]:
     ax.plot([0, 1], [0, 1], linestyle="--", color="gray", label="perfect calibration")
     ax.set_xlabel("mean predicted probability")
     ax.set_ylabel("observed fraction positive")
-    ax.set_title(f"Calibration — Evans label (y_faers_signal), validate, {exp_id}")
+    ax.set_title(f"Calibration â€” Evans label (y_faers_signal), validate, {exp_id}")
     ax.legend()
     calibration_path = out / f"{exp_id}_calibration.png"
     fig.savefig(calibration_path, dpi=150, bbox_inches="tight")
