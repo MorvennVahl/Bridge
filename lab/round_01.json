@@ -1,0 +1,196 @@
+{
+  "round": 1,
+  "title": "Establish the floor and measure the bias structure",
+  "created_utc": "2026-09-22T17:19:40.453358+00:00",
+  "orchestrator_notes": "No lane depends on another; all eight run in parallel. Pathway-overlap and graph lanes are deferred to Round 2 pending the Open Targets association pull.",
+  "global_rules": [
+    "Compute drug and condition degree from train only; apply the train mapping to validate.",
+    "Model selection by grouped 5-fold CV inside train, grouping on group_key.",
+    "Exactly one validation evaluation per lane, after all choices are fixed.",
+    "Primary metric average precision; also report ROC-AUC and a calibration curve.",
+    "Report subgroup breakdown by mapped/unmapped, arm, and best_match_tier.",
+    "Never read data/splits/test.csv.",
+    "Exclude ingredient_features_label_adjacent.csv from all predictors.",
+    "Register in the lab notebook before running; complete afterwards even for nulls."
+  ],
+  "lanes": [
+    {
+      "lane": "R1-L1",
+      "title": "Degree-only baseline",
+      "label": "y_faers_signal",
+      "features": [
+        "drug_degree_train",
+        "condition_degree_train",
+        "condition_record_count"
+      ],
+      "inputs": [
+        "data/splits/train.csv",
+        "data/splits/validate.csv",
+        "data/input/condition/condition_features_basic.csv"
+      ],
+      "methods": [
+        "logistic_regression",
+        "lightgbm"
+      ],
+      "est_minutes": 15,
+      "cpu": 4,
+      "memory_gb": 8,
+      "deliverable": "reference AP for the project; per-feature AP"
+    },
+    {
+      "lane": "R1-L2",
+      "title": "Condition-intrinsic only",
+      "label": "y_faers_signal",
+      "features": [
+        "condition_features_basic",
+        "condition_group_long_onehot"
+      ],
+      "inputs": [
+        "data/splits/train.csv",
+        "data/splits/validate.csv",
+        "data/input/condition/condition_features_basic.csv",
+        "data/input/condition/condition_group_long.csv"
+      ],
+      "methods": [
+        "lightgbm"
+      ],
+      "est_minutes": 25,
+      "cpu": 4,
+      "memory_gb": 8,
+      "deliverable": "AP; IDF-weighted n_hpo_genes comparison"
+    },
+    {
+      "lane": "R1-L3",
+      "title": "Drug-intrinsic only",
+      "label": "y_faers_signal",
+      "features": [
+        "ingredient_features minus label_adjacent"
+      ],
+      "inputs": [
+        "data/splits/train.csv",
+        "data/splits/validate.csv",
+        "data/input/drug/ingredient_features.csv",
+        "data/data_dictionary.csv"
+      ],
+      "methods": [
+        "lightgbm"
+      ],
+      "est_minutes": 30,
+      "cpu": 8,
+      "memory_gb": 16,
+      "deliverable": "AP; share attributable to ChEMBL-match missingness"
+    },
+    {
+      "lane": "R1-L4",
+      "title": "Drug + condition, no interaction",
+      "label": "y_faers_signal",
+      "features": [
+        "L1 + L2 + L3 union"
+      ],
+      "inputs": [
+        "data/splits/train.csv",
+        "data/splits/validate.csv",
+        "data/input/drug/ingredient_features.csv",
+        "data/input/condition/condition_features_basic.csv",
+        "data/input/condition/condition_group_long.csv"
+      ],
+      "methods": [
+        "lightgbm"
+      ],
+      "est_minutes": 45,
+      "cpu": 8,
+      "memory_gb": 16,
+      "deliverable": "the project's null hypothesis number"
+    },
+    {
+      "lane": "R1-L5",
+      "title": "Same-target neighbour signal",
+      "label": "y_faers_signal",
+      "features": [
+        "n_target_neighbours",
+        "neighbour_flag_rate",
+        "primary_target_neighbour_rate",
+        "action_type_matched_rate",
+        "shrunk_neighbour_rate"
+      ],
+      "inputs": [
+        "data/splits/train.csv",
+        "data/splits/validate.csv",
+        "data/input/drug/ingredient_target_long.csv"
+      ],
+      "methods": [
+        "lightgbm",
+        "logistic_regression"
+      ],
+      "est_minutes": 60,
+      "cpu": 8,
+      "memory_gb": 16,
+      "deliverable": "AP overall and conditional on neighbour count; transportability decay curve"
+    },
+    {
+      "lane": "R1-L6",
+      "title": "Disproportionality residual as target",
+      "label": "faers_prr",
+      "features": [
+        "L2 + L3"
+      ],
+      "inputs": [
+        "data/splits/train.csv",
+        "data/splits/validate.csv",
+        "data/input/drug/ingredient_features.csv",
+        "data/input/condition/condition_features_basic.csv"
+      ],
+      "methods": [
+        "mixed_effects_or_fixed_effects_residual",
+        "lightgbm_regression"
+      ],
+      "est_minutes": 45,
+      "cpu": 8,
+      "memory_gb": 16,
+      "deliverable": "Spearman on validate; residual vs raw-flag comparison"
+    },
+    {
+      "lane": "R1-L7",
+      "title": "Efficacy label",
+      "label": "y_semmeddb_treats",
+      "features": [
+        "L2 + L3 + L5"
+      ],
+      "inputs": [
+        "data/splits/train.csv",
+        "data/splits/validate.csv",
+        "data/input/drug/ingredient_features.csv",
+        "data/input/drug/ingredient_target_long.csv",
+        "data/input/condition/condition_features_basic.csv"
+      ],
+      "methods": [
+        "lightgbm"
+      ],
+      "est_minutes": 45,
+      "cpu": 8,
+      "memory_gb": 16,
+      "deliverable": "AP with multi-seed spread; importance of drug-age proxies"
+    },
+    {
+      "lane": "R1-L8",
+      "title": "Label-definition sensitivity",
+      "label": "other",
+      "features": [
+        "L1 and L3 feature sets, varying label definition"
+      ],
+      "inputs": [
+        "data/splits/train.csv",
+        "data/splits/validate.csv",
+        "data/output/pair_labels.csv",
+        "data/input/drug/ingredient_features.csv"
+      ],
+      "methods": [
+        "lightgbm"
+      ],
+      "est_minutes": 40,
+      "cpu": 8,
+      "memory_gb": 16,
+      "deliverable": "AP by label definition; stability of feature-set ranking"
+    }
+  ]
+}
