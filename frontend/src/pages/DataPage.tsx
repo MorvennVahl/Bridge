@@ -139,6 +139,7 @@ export default function DataPage() {
   }
 
   const meta = tables.find((t) => t.name === selected);
+  const isReadOnly = meta ? !meta.editable : false;
   const totalPages = page ? Math.max(1, Math.ceil(page.total / limit)) : 1;
   const currentPage = Math.floor(offset / limit) + 1;
 
@@ -171,7 +172,8 @@ export default function DataPage() {
           </button>
           <button
             onClick={saveAll}
-            disabled={pendingCount === 0 || saving}
+            disabled={pendingCount === 0 || saving || isReadOnly}
+            title={isReadOnly ? "This table is a source of truth — read only" : ""}
             className="inline-flex h-8 min-w-[96px] items-center justify-center rounded-md bg-emerald-600 px-3 text-xs font-medium text-white transition hover:bg-emerald-500 disabled:cursor-not-allowed disabled:bg-emerald-600/40"
           >
             {saving ? "Saving…" : "Save all"}
@@ -195,6 +197,11 @@ export default function DataPage() {
             );
           })}
         </select>
+        {isReadOnly && (
+          <span className="rounded-full border border-rose-300 bg-rose-50 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-rose-700">
+            source · read only
+          </span>
+        )}
         {meta?.warn && (
           <span className="text-xs text-amber-700">⚠ {meta.warn}</span>
         )}
@@ -276,7 +283,8 @@ export default function DataPage() {
       <footer className="flex items-center justify-between gap-3">
         <button
           onClick={newRow}
-          disabled={!page}
+          disabled={!page || isReadOnly}
+          title={isReadOnly ? "Read-only table" : ""}
           className="rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 disabled:opacity-40"
         >
           + Add row
