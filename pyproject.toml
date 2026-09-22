@@ -8,6 +8,9 @@ dependencies = [
     "pandas>=3.0.6",
     "polars>=1.44.2",
     "pyarrow>=25.0.1",
+    "fastapi[standard]>=0.115.0",
+    "pandas>=2.2.0",
+    "pyarrow>=17.0.0",
 ]
 
 [dependency-groups]
@@ -19,7 +22,7 @@ dev = [
 [tool.ruff]
 target-version = "py313"
 line-length = 100
-extend-exclude = [".agents", "data"]
+extend-exclude = [".agents", "data", "frontend"]
 
 [tool.ruff.lint]
 select = [
@@ -44,16 +47,13 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.pyright]
-include = ["main.py", "bridge", "scripts"]
-# Pre-existing type errors, tracked separately rather than fixed in passing: 18 in
-# condition_map.py, 18 in the fetch scripts, 5 in build_features.py. Several are real
-# None-subscript crashes on API responses. Until then these paths stay unchecked, but
-# everything else under bridge/ is now covered — previously `include` pointed at a src/
-# directory that does not exist, so no module in the repo was type-checked at all.
-ignore = ["bridge/condition_map.py", "scripts"]
-exclude = [".venv", ".agents", "data", "**/__pycache__"]
+include = ["main.py", "bridge", "backend", "modal_app.py"]
+exclude = [".venv", ".agents", "data", "frontend", "scripts", "**/__pycache__"]
 pythonVersion = "3.13"
 typeCheckingMode = "basic"
 venvPath = "."
 venv = ".venv"
 reportMissingImports = "warning"
+# Pandas stubs generate false positives on itertuples() and to_dict() overloads.
+reportAttributeAccessIssue = "warning"
+reportCallIssue = "warning"
