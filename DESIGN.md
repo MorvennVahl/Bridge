@@ -167,14 +167,45 @@ phenotype profile and a phenotype reaches disease-level genes.
   raw gene count therefore measures tree position, not biology, so terms carry Resnik
   information content and a per-gene specificity flag instead.
 
+## Labels
+
+`bridge.labels` turns the CEM table into two labels rather than one, because treating and
+causing are not opposites — 325 pairs are asserted to do both.
+
+| label | positive | explicit negative | contradicted (null) |
+|---|---|---|---|
+| efficacy (TREATS, PREVENTS) | 7,223 | 84 | 76 |
+| harm (CAUSES, PREDISPOSES, COMPLICATES) | 1,343 | 37 | 26 |
+
+Only **8,352 of 1,447,172 pairs (0.58%)** carry any directional label. Everything else has
+FAERS counts only, and FAERS is a safety signal, not an efficacy one. The indication side
+of this problem is built on eight thousand literature assertions, and no amount of feature
+engineering changes that — it is the binding constraint on the whole plan.
+
+FAERS pairs are reduced to a boolean using the standard disproportionality thresholds
+(≥3 cases, PRR ≥2, chi-square ≥4): **162,881 of 1,437,260 reported pairs (11.3%)** clear
+all three. The flag is null, not false, for pairs with no FAERS evidence — "not reported"
+and "reported without a signal" are different claims.
+
+Contradicted pairs (`TREATS` and `NEG_TREATS` together) get a null label and a flag rather
+than a vote on sentence counts, which measure how often something was written rather than
+whether it is true.
+
+Degree lives in `pair_nuisance_label_adjacent.parquet`, named for the repo convention that
+anything derived from the label table is not a predictor.
+
 ## Next step
 
-Both halves are keyed on ontology codes; the CEM table gives only `condition_concept_id`
-and a name. The missing link is an OMOP vocabulary export — concept codes, source-vocabulary
-codes, ancestry and synonyms for the 5,631 conditions — requested in
-[docs/vocab-export-spec.md](docs/vocab-export-spec.md). Once it lands, the two halves join
-to `condition_concept_id` in one pass and the real coverage number replaces the estimates
-above.
+Every input the baseline needs now exists: drug-side features, condition-side features and
+genes, and labels. What remains is the model itself —
 
-Independent of that, the drug side is untouched: ChEMBL mechanisms and targets, and
-Reactome for gene-to-pathway. Neither needs database access.
+1. Assemble the pair matrix by joining ingredient and condition features on the gene pivot,
+   plus explicit path features (does this drug's target sit on a gene implicated in this
+   condition; what happened in RWD to other drugs hitting the same target).
+2. Fit gradient boosting with **entire ingredients held out**, never a random pair split.
+3. Decide negative sampling deliberately. Absence is not evidence of safety, so the 22.7M
+   pairs absent from CEM are not negatives; OHDSI-style negative controls are the standard
+   device.
+
+The honest ceiling to keep in view: 43.2% of conditions share a gene with any drug target,
+and 0.58% of pairs carry a directional label.
