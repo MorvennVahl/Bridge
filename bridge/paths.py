@@ -28,6 +28,11 @@ INGREDIENT_TARGETS = DATA / "ingredient_target_long.csv"
 OT_TARGET_GLOB_DIR = REF / "ot"
 
 # OMOP vocabulary export (see docs/vocab-export-spec.md)
+CHEMBL_INDICATIONS = REF / "chembl" / "drug_indication.csv"
+INGREDIENT_FEATURES = DATA / "input" / "drug" / "ingredient_features.csv"
+CONDITION_ONTOLOGY_MAP = DATA / "input" / "condition" / "condition_ontology_map.csv"
+OMOP_SOURCE_CODES = REF / "omop" / "concept_source_codes.csv"
+
 OMOP_CONCEPT = REF / "omop" / "concept.csv"
 OMOP_CONCEPT_ANCESTOR = REF / "omop" / "concept_ancestor.csv"
 OMOP_CONCEPT_SYNONYM = REF / "omop" / "concept_synonym.csv"
@@ -44,5 +49,6 @@ CONDITION_MAP_OUT = DERIVED / "condition_ontology_map.parquet"
 CONDITION_FEATURES_OUT = DERIVED / "condition_features.parquet"
 CONDITION_GENES_OUT = DERIVED / "condition_genes.parquet"
 CONDITION_ANCESTORS_OUT = DERIVED / "condition_ancestors.parquet"
+PAIR_INDICATIONS_OUT = DERIVED / "pair_indications.parquet"
 PAIR_LABELS_OUT = DERIVED / "pair_labels.parquet"
 PAIR_NUISANCE_OUT = DERIVED / "pair_nuisance_label_adjacent.parquet"
