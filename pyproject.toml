@@ -6,6 +6,7 @@ dependencies = [
     "modal>=1.5.5",
     "numpy>=2.5.3",
     "pandas>=3.0.6",
+    "polars>=1.44.2",
     "pyarrow>=25.0.1",
 ]
 
@@ -43,7 +44,13 @@ quote-style = "double"
 indent-style = "space"
 
 [tool.pyright]
-include = ["main.py", "src"]
+include = ["main.py", "bridge", "scripts"]
+# Pre-existing type errors, tracked separately rather than fixed in passing: 18 in
+# condition_map.py, 18 in the fetch scripts, 5 in build_features.py. Several are real
+# None-subscript crashes on API responses. Until then these paths stay unchecked, but
+# everything else under bridge/ is now covered — previously `include` pointed at a src/
+# directory that does not exist, so no module in the repo was type-checked at all.
+ignore = ["bridge/condition_map.py", "scripts"]
 exclude = [".venv", ".agents", "data", "**/__pycache__"]
 pythonVersion = "3.13"
 typeCheckingMode = "basic"
