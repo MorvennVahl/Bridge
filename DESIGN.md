@@ -81,8 +81,8 @@ Edges:
 - target →`encoded_by`→ gene →`member_of`→ pathway
 - gene →`associated_with`→ condition, **weighted by genetic evidence** (Open Targets
   association scores; this is the edge that carries most of the causal information).
-  *Not yet available* — the Open Targets association file is not in the repo, and the
-  stand-in built from OMIM/Orphanet is unweighted and Mendelian-skewed. See below.
+  Now present: `data/ref/ot/association_by_datatype_indirect__filtered.parquet`, 4.5M
+  scored edges over 2,160 diseases, broken down by evidence type. See below.
 - condition →`is_a`→ condition (hierarchy; gives the model a prior that sibling
   conditions behave alike)
 - ingredient —`RWD`— condition: **the label edge**, not an input feature
@@ -156,11 +156,17 @@ phenotype profile and a phenotype reaches disease-level genes.
 - **`hp.obo` has no usable cross-references** — 92 MedDRA and 38 ICD-10 across 20,482
   terms, no UMLS or SNOMED. The Open Targets HPO table is what makes the symptom half
   joinable at all.
-- **Disease-to-gene skews Mendelian.** The Open Targets target-disease association file is
-  not in the repo, so gene evidence comes from HPO's `genes_to_disease` through OMIM and
-  Orphanet: 8,499 MENDELIAN against 646 POLYGENIC. Common polygenic disease — most of what
-  FAERS actually reports on — is thinly covered. Pulling the Open Targets association file
-  is the single highest-value addition to the reference data.
+- **The curated disease-to-gene layer skews Mendelian**, and Open Targets is what fixes it.
+  HPO's `genes_to_disease` runs 8,499 MENDELIAN against 646 POLYGENIC, while FAERS reports
+  overwhelmingly on common polygenic disease. Adding the Open Targets associations took
+  conditions carrying at least one gene from 28.3% to 47.9%, and conditions sharing a gene
+  with a drug target from 20.6% to 43.2%.
+- **One Open Targets evidence type must never be a feature.** `known_drug` is derived from
+  ChEMBL indications and clinical trials: it says a drug hitting this target is developed
+  for this disease. Our label is whether a drug treats or causes a condition, so using it
+  would let the model read the answer off its own input. It stays in the reference file for
+  fidelity and is excluded at build time — `bridge.conditions.LEAKY_DATATYPES`. The other
+  evidence types describe gene-disease biology, not drug-disease outcomes, and are safe.
 - **HPO gene annotations arrive pre-propagated.** `phenotype_to_genes.txt` already applies
   the true path rule: across 114,080 child-ancestor pairs no ancestor was missing a
   descendant's gene, and `HP:0000118` alone carries 5,268 of the 5,276 distinct genes. A
