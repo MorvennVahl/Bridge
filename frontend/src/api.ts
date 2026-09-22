@@ -97,6 +97,82 @@ async function jsonReq<T>(path: string, init?: RequestInit): Promise<T> {
   return r.json() as Promise<T>;
 }
 
+export interface WorkflowRun {
+  id: string;
+  stage: string;
+  status: string;
+  started_at: string;
+  finished_at: string;
+  elapsed_ms: number;
+  metrics: Record<string, unknown>;
+  notes: string | null;
+  error: string | null;
+}
+
+export interface WorkflowKPIs {
+  total_runs: number;
+  last_stage: string | null;
+  last_stage_at: string | null;
+  stages_run: Record<string, number>;
+  conditions_total: number;
+  conditions_mapped: number;
+  conditions_with_genes: number;
+  conditions_with_drug_target_overlap: number;
+  swarm_runs: number;
+  latest_metrics: Record<string, unknown>;
+}
+
+export interface SwarmAgentResult {
+  role: string;
+  status: string;
+  score_treats: number | null;
+  score_causes: number | null;
+  confidence: number | null;
+  verdict: string | null;
+  rationale: string | null;
+  key_evidence: string[];
+  elapsed_ms: number;
+  error: string | null;
+}
+
+export interface SwarmConsensus {
+  mean_treats: number;
+  mean_causes: number;
+  stdev_treats: number;
+  stdev_causes: number;
+  n_agents: number;
+  direction: string;
+}
+
+export interface SwarmRun {
+  id: string;
+  started_at: string;
+  finished_at: string;
+  ingredient_concept_id: number;
+  ingredient_name: string;
+  condition_concept_id: number;
+  condition_name: string;
+  context: Record<string, unknown>;
+  agents: SwarmAgentResult[];
+  consensus: SwarmConsensus;
+}
+
+export interface SwarmLoopStatus {
+  running: boolean;
+  iterations: number;
+  started_at: string | null;
+  last_pair: {
+    ingredient_concept_id: number;
+    condition_concept_id: number;
+    ingredient_name: string;
+    condition_name: string;
+    direction: string;
+  } | null;
+  last_finished_at: string | null;
+  last_error: string | null;
+  interval_seconds: number;
+}
+
 export const api = {
   ingredients: (q?: string, limit = 50) =>
     jsonReq<Ingredient[]>(
@@ -123,4 +199,25 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  workflowRuns: (limit = 50) => jsonReq<WorkflowRun[]>(`/api/workflow/runs?limit=${limit}`),
+  workflowKPIs: () => jsonReq<WorkflowKPIs>(`/api/workflow/kpis`),
+  triggerStage: (stage: string, notes?: string) =>
+    jsonReq<WorkflowRun>(`/api/workflow/trigger`, {
+      method: "POST",
+      body: JSON.stringify({ stage, notes: notes ?? null }),
+    }),
+  runSwarm: (ingredient_concept_id: number, condition_concept_id: number) =>
+    jsonReq<SwarmRun>(`/api/swarm/run`, {
+      method: "POST",
+      body: JSON.stringify({ ingredient_concept_id, condition_concept_id }),
+    }),
+  swarmRuns: (limit = 20) => jsonReq<SwarmRun[]>(`/api/swarm/runs?limit=${limit}`),
+  swarmLoopStatus: () => jsonReq<SwarmLoopStatus>(`/api/swarm/loop/status`),
+  swarmLoopStart: (interval_seconds = 3) =>
+    jsonReq<SwarmLoopStatus>(
+      `/api/swarm/loop/start?interval_seconds=${interval_seconds}`,
+      { method: "POST" },
+    ),
+  swarmLoopStop: () =>
+    jsonReq<SwarmLoopStatus>(`/api/swarm/loop/stop`, { method: "POST" }),
 };
