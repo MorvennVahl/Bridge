@@ -5,16 +5,45 @@ description: How to run compute on Modal (ablack3 workspace) from this repo — 
 
 # Modal compute
 
-Auth is already set up: token in `~/.modal.toml`, profile `ablack3`. No `modal setup` needed.
+## Token
 
-## Running
+Auth is already set up on this machine: a token pair lives in `~/.modal.toml` under profile
+`ablack3`. Nothing further is needed to run jobs.
 
-The `modal` CLI script isn't on PATH. Always invoke via:
+If the token is ever missing or invalid, get a new one at
+[modal.com/settings/tokens](https://modal.com/settings/tokens) (workspace `ablack3`), or
+regenerate it from this machine with:
 
 ```bash
-python3 -m modal run path/to/script.py
-python3 -m modal deploy path/to/script.py
+python3 -m modal token new
 ```
+
+`python3 -m modal setup` does the same thing via a browser login flow. Never print or paste
+the token itself into chat, a file, or a URL — only confirm it works by running a job.
+
+## Running jobs
+
+The `modal` CLI script isn't on PATH here. Always invoke via `python3 -m modal`:
+
+```bash
+python3 -m modal run path/to/script.py       # run once, tear down after (use for scripts, testing)
+python3 -m modal deploy path/to/script.py    # deploy persistently (use for scheduled/served functions)
+```
+
+To call a deployed function's API from other code instead of the CLI:
+
+```python
+import modal
+
+fn = modal.Function.from_name("app-name", "function-name")
+result = fn.remote(x)          # sync call, blocks for the result
+call = fn.spawn(x)             # async call, returns a FunctionCall handle
+result = call.get()            # block on that handle later
+```
+
+`from_name` looks up a function in an already-`deploy`ed app by app name and function name —
+use it when calling Modal compute from code that isn't itself the app definition (e.g. a
+script in this repo invoking a deployed pipeline).
 
 ## Minimal app
 
