@@ -3,7 +3,9 @@ name = "bridge"
 version = "0.1.0"
 requires-python = ">=3.13"
 dependencies = [
+    "anthropic>=0.40.0",
     "fastapi[standard]>=0.115.0",
+    "mcp>=1.2.0,<2",
     "modal>=1.5.5",
     "numpy>=2.2.0",
     "pandas>=2.2.0",
