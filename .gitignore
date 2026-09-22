@@ -16,6 +16,8 @@ venv/
 .DS_Store
 .Rproj.user
 
+# Derived tables (regenerable via src/bridge/build_*.py)
+data/derived/
 # Frontend
 node_modules/
 frontend/dist/
