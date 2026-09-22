@@ -152,14 +152,18 @@ switch target? Answer it. A hedge here costs the next agent a rerun.
 exp = ln.register(
     agent="exp04",
     title="Two-way-demeaned log PRR residual as the modelling target",
-    hypothesis=("Drug and condition intrinsic features predict the degree-free "
-                "log(faers_prr) residual with Spearman rho >= 0.10 on validate, a larger "
-                "effect relative to its null than the same features achieve on the binary "
-                "Evans flag."),
-    approach=("Restrict to faers_case_count >= 3. Two-way fixed effects on log PRR by "
-              "alternating demeaning, fitted on train and applied to validate. HistGBM "
-              "regressor on the residual, plus the binary classifier on identical rows for "
-              "a four-cell prediction-vs-target comparison."),
+    hypothesis=(
+        "Drug and condition intrinsic features predict the degree-free "
+        "log(faers_prr) residual with Spearman rho >= 0.10 on validate, a larger "
+        "effect relative to its null than the same features achieve on the binary "
+        "Evans flag."
+    ),
+    approach=(
+        "Restrict to faers_case_count >= 3. Two-way fixed effects on log PRR by "
+        "alternating demeaning, fitted on train and applied to validate. HistGBM "
+        "regressor on the residual, plus the binary classifier on identical rows for "
+        "a four-cell prediction-vs-target comparison."
+    ),
     label="faers_prr_residual",
     features=["degree", "drug_intrinsic", "condition_intrinsic"],
     split="train/validate, grouped by primary target gene, case_count >= 3 subset",
