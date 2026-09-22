@@ -6,7 +6,7 @@ Reference inputs live under `data/ref/` and are Git LFS-tracked. Derived tables 
 
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+REPO_ROOT = Path(__file__).resolve().parents[1]
 
 DATA = REPO_ROOT / "data"
 REF = DATA / "ref"
