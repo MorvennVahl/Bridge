@@ -11,7 +11,8 @@ produced it, so downstream features can be restricted to whatever precision an
 analysis needs.
 
   1  sctid_xref     SNOMED concept_code == an SCTID cross-reference in Open
-                    Targets' disease index or in the MONDO SSSOM mapping set.
+                    Targets' disease index, its HPO index, or the MONDO SSSOM
+                    mapping set. Covers both arms.
                     Codes come from `condition_concept_codes()`, which reads the
                     OMOP vocabulary export at data/ref/omop/concept.csv.
   2  label_exact    normalised condition name == normalised ontology label or
@@ -130,6 +131,28 @@ def load_hpo_terms() -> dict[str, dict]:
     return terms
 
 
+def load_hpo_snomed_xrefs() -> dict[str, set[str]]:
+    """SNOMED code -> HPO ids, from Open Targets' HPO index.
+
+    `hp.obo` really does carry no SNOMED or UMLS cross-references, but Open Targets' HPO
+    index retains them, covering 4,379 SNOMED codes across 3,443 HP terms. Without this the
+    phenotype arm has no tier-1 match at all and falls back to lexical matching, which costs
+    690 conditions that the disease arm cannot reach on its own.
+    """
+    frame = pd.read_parquet(
+        REF / "ot" / "disease_hpo__disease_hpo.parquet", columns=["id", "dbXRefs"]
+    )
+    out: dict[str, set[str]] = collections.defaultdict(set)
+    for hid, xrefs in zip(frame["id"], frame["dbXRefs"], strict=True):
+        if not isinstance(hid, str) or not hid.startswith("HP_"):
+            continue
+        for xref in [] if xrefs is None else list(xrefs):
+            prefix, _, code = str(xref).partition(":")
+            if prefix.upper() in ("SCTID", "SNOMEDCT_US", "SNOMEDCT") and code.strip():
+                out[code.strip()].add(hid.replace("_", ":", 1))
+    return out
+
+
 def load_mondo_sssom() -> pd.DataFrame:
     path = REF / "mondo.sssom.tsv"
     skip = 0
@@ -142,13 +165,20 @@ def load_mondo_sssom() -> pd.DataFrame:
     return pd.read_csv(path, sep="\t", skiprows=skip, dtype=str, low_memory=False)
 
 
-def build_indexes(ot: pd.DataFrame, hpo: dict[str, dict], sssom: pd.DataFrame):
+def build_indexes(
+    ot: pd.DataFrame,
+    hpo: dict[str, dict],
+    sssom: pd.DataFrame,
+    hpo_sctid: dict[str, set[str]] | None = None,
+):
     """Return (label_index, token_index, sctid_index, term_meta).
 
     Label and token indexes map a normalised string to a set of ontology ids and
-    cover both arms. sctid_index covers the disease arm only: HPO carries no
-    SNOMED cross-references, its UMLS/SNOMED xrefs having been removed for
-    licensing reasons.
+    cover both arms. sctid_index now covers both arms too: the disease arm from Open
+    Targets' own xrefs plus the MONDO SSSOM set, and the phenotype arm from Open Targets'
+    HPO index, which retains the SNOMED cross-references `hp.obo` drops.
+
+    `hpo_sctid` is loaded from Open Targets when not supplied.
     """
     label: dict[str, set[str]] = collections.defaultdict(set)
     token: dict[str, set[str]] = collections.defaultdict(set)
@@ -175,6 +205,14 @@ def build_indexes(ot: pd.DataFrame, hpo: dict[str, dict], sssom: pd.DataFrame):
             if nk:
                 label[nk].add(hid)
                 token[token_key(nk)].add(hid)
+
+    # Open Targets' HPO index retains the SNOMED cross-references hp.obo drops, and is what
+    # gives the phenotype arm a tier-1 match. Restricted to terms already in `meta`, so
+    # obsolete HP ids dropped by load_hpo_terms stay dropped.
+    for code, hids in (load_hpo_snomed_xrefs() if hpo_sctid is None else hpo_sctid).items():
+        for hid in hids:
+            if hid in meta:
+                sctid[code].add(hid)
 
     # MONDO's SSSOM set widens the SNOMED bridge beyond Open Targets' own xrefs.
     snomed_rows = sssom[sssom.object_id.str.startswith("SCTID", na=False)]
