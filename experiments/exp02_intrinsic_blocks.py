@@ -80,7 +80,7 @@ def _normalize_block(name: str) -> str:
     return " ".join(str(name).strip().lower().replace("_", " ").split())
 
 
-def _cap_and_onehot(series: "pd.Series", prefix: str, cap: int = CARDINALITY_CAP) -> "pd.DataFrame":
+def _cap_and_onehot(series: pd.Series, prefix: str, cap: int = CARDINALITY_CAP) -> pd.DataFrame:
     """One-hot encode a categorical series, bucketing tail categories beyond `cap` as 'other'."""
     import pandas as pd
 
@@ -126,8 +126,8 @@ def _check_preconditions(
 
 
 def _build_degree_features(
-    train: "pd.DataFrame", validate: "pd.DataFrame"
-) -> tuple["pd.DataFrame", "pd.DataFrame"]:
+    train: pd.DataFrame, validate: pd.DataFrame
+) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Train-derived degree features (drug degree, condition degree, pair-frequency-free).
 
     Computed on TRAIN ONLY; the same mapping (with train median for unseen keys) is
@@ -143,7 +143,7 @@ def _build_degree_features(
     drug_degree_median = float(drug_degree.median())
     cond_degree_median = float(cond_degree.median())
 
-    def _apply(df: "pd.DataFrame") -> "pd.DataFrame":
+    def _apply(df: pd.DataFrame) -> pd.DataFrame:
         out = pd.DataFrame(index=df.index)
         out["degree_drug"] = np.log1p(
             df["ingredient_concept_id"].map(drug_degree).fillna(drug_degree_median)
@@ -161,7 +161,7 @@ def _build_degree_features(
 
 def _load_drug_features(
     drug_path: pathlib.Path, dict_path: pathlib.Path
-) -> tuple["pd.DataFrame", dict]:
+) -> tuple[pd.DataFrame, dict]:
     """Load ingredient_features.csv, select block columns via data_dictionary, drop
     forbidden columns, add has_chembl_match. Returns (df, diagnostics)."""
     import pandas as pd
@@ -201,7 +201,7 @@ def _load_drug_features(
     return out, diagnostics
 
 
-def _build_drug_design(drug_raw: "pd.DataFrame") -> tuple["pd.DataFrame", list[str]]:
+def _build_drug_design(drug_raw: pd.DataFrame) -> tuple[pd.DataFrame, list[str]]:
     """One-hot / categorical-encode the drug block; return (feature_df, categorical_cols)."""
     import pandas as pd
 
@@ -223,7 +223,7 @@ def _build_drug_design(drug_raw: "pd.DataFrame") -> tuple["pd.DataFrame", list[s
     return design, cat_cols
 
 
-def _load_condition_features(cond_path: pathlib.Path, group_path: pathlib.Path) -> "pd.DataFrame":
+def _load_condition_features(cond_path: pathlib.Path, group_path: pathlib.Path) -> pd.DataFrame:
     """Build the condition-intrinsic design matrix per the spec's Condition-intrinsic block."""
     import numpy as np
     import pandas as pd
@@ -285,11 +285,11 @@ def _load_condition_features(cond_path: pathlib.Path, group_path: pathlib.Path) 
 
 
 def _fit_score(
-    x_train: "pd.DataFrame",
-    y_train: "pd.Series",
-    groups_train: "pd.Series",
-    x_val: "pd.DataFrame",
-    y_val: "pd.Series",
+    x_train: pd.DataFrame,
+    y_train: pd.Series,
+    groups_train: pd.Series,
+    x_val: pd.DataFrame,
+    y_val: pd.Series,
     n_folds: int = 3,
 ) -> dict:
     """Grouped CV inside train, then one fit on all of train + one validate scoring."""
@@ -298,7 +298,7 @@ def _fit_score(
     from sklearn.metrics import average_precision_score, roc_auc_score
     from sklearn.model_selection import GroupKFold
 
-    def _make_model() -> "HistGradientBoostingClassifier":
+    def _make_model() -> HistGradientBoostingClassifier:
         return HistGradientBoostingClassifier(
             max_iter=200,
             learning_rate=0.06,
@@ -391,7 +391,7 @@ def run(exp_id: str) -> dict[str, float]:
     log.info("loading condition-intrinsic block")
     cond_design = _load_condition_features(cond_path, group_path)
 
-    def _assemble(base_df: "pd.DataFrame", degree_df: "pd.DataFrame") -> dict[str, "pd.DataFrame"]:
+    def _assemble(base_df: pd.DataFrame, degree_df: pd.DataFrame) -> dict[str, pd.DataFrame]:
         idx = base_df.index
         d = degree_df.set_axis(idx)
         merged_drug = base_df[["ingredient_concept_id"]].merge(

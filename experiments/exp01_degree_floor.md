@@ -146,12 +146,16 @@ sensitivity is now mandatory downstream.
 exp = ln.register(
     agent="exp01",
     title="Degree floor across five FAERS label definitions",
-    hypothesis=("Drug degree, condition degree and condition record_count reach AP well "
-                "above prevalence on y_faers_signal, and their AP ranking is stable across "
-                "five label definitions."),
-    approach=("Train-derived degree terms only. Logistic regression and HistGBM per label "
-              "variant, plus single-feature fits. Grouped 3-fold CV in train, one validate "
-              "evaluation."),
+    hypothesis=(
+        "Drug degree, condition degree and condition record_count reach AP well "
+        "above prevalence on y_faers_signal, and their AP ranking is stable across "
+        "five label definitions."
+    ),
+    approach=(
+        "Train-derived degree terms only. Logistic regression and HistGBM per label "
+        "variant, plus single-feature fits. Grouped 3-fold CV in train, one validate "
+        "evaluation."
+    ),
     label="y_faers_signal",
     features=["drug_degree_train", "condition_degree_train", "condition_record_count"],
     split="train/validate, grouped by primary target gene",
