@@ -1,0 +1,12 @@
+{
+  "share_validate_drug_unseen": 1.0,
+  "share_train_drug_unseen": 0.0,
+  "validate_target_variance": 1.0720212986602964,
+  "validate_between_drug_variance": 0.4320741734979499,
+  "validate_between_drug_share": 0.40304625853787834,
+  "train_cv_spearman": 0.47480607717395923,
+  "validate_spearman_as_written": -0.3176941548063032,
+  "validate_spearman_within_drug": 0.4004262302556427,
+  "spearman_prediction_vs_omitted_drug_offset": -0.48096926485212127,
+  "n_drugs_within_drug_eval": 497.0
+}
