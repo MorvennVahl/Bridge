@@ -18,7 +18,6 @@ Requires ANTHROPIC_API_KEY in environment for score_pair_with_swarm.
 
 from __future__ import annotations
 
-import asyncio
 import json
 import os
 import sys
@@ -125,7 +124,7 @@ def get_condition_features(condition_concept_id: int) -> str:
 
 
 @mcp.tool()
-def score_pair_with_swarm(ingredient_concept_id: int, condition_concept_id: int) -> str:
+async def score_pair_with_swarm(ingredient_concept_id: int, condition_concept_id: int) -> str:
     """Run the 5-agent Anthropic swarm on this pair right now.
 
     Requires ANTHROPIC_API_KEY. Five Claude Sonnet agents (mechanism,
@@ -140,10 +139,7 @@ def score_pair_with_swarm(ingredient_concept_id: int, condition_concept_id: int)
         ingredient_concept_id=ingredient_concept_id,
         condition_concept_id=condition_concept_id,
     )
-    try:
-        run = asyncio.get_event_loop().run_until_complete(bswarm.run_swarm(req))
-    except RuntimeError:
-        run = asyncio.run(bswarm.run_swarm(req))
+    run = await bswarm.run_swarm(req)
     return json.dumps(run.model_dump(), default=str)
 
 
