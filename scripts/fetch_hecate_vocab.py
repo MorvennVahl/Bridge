@@ -87,7 +87,6 @@ def done_ids(path: Path, key: str = "concept_id") -> set[int]:
     seen = set()
     with open(path) as fh:
         for line in fh:
-            # A partial run can leave a truncated final line; skipping it is the point.
             with contextlib.suppress(Exception):
                 seen.add(json.loads(line)[key])
     return seen

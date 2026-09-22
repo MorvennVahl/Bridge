@@ -41,7 +41,8 @@ def main() -> int:
     scratch = Path(sys.argv[3]) if len(sys.argv) > 3 else Path(tempfile.mkdtemp())
     scratch.mkdir(parents=True, exist_ok=True)
 
-    wanted = {line.strip() for line in ids_file.read_text().splitlines() if line.strip()}
+    with open(ids_file) as fh:
+        wanted = {ln.strip() for ln in fh if ln.strip()}
     print(f"wanted disease ids: {len(wanted)}", flush=True)
 
     parts = part_names()

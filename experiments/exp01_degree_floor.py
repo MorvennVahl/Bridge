@@ -177,7 +177,7 @@ def run(exp_id: str) -> dict[str, float]:
         )
 
     def grouped_cv_ap(
-        X: pd.DataFrame,  # noqa: N803 -- conventional sklearn feature-matrix name
+        X: pd.DataFrame,  # noqa: N803 -- conventional sklearn name
         y: pd.Series,
         groups: pd.Series,
         model_fn,
@@ -209,7 +209,7 @@ def run(exp_id: str) -> dict[str, float]:
         prevalence_val = float(y_val.mean())
         label_prevalence_validate[label_id] = prevalence_val
 
-        X_train_full = train[feature_cols]  # noqa: N806 -- conventional sklearn feature-matrix name
+        X_train_full = train[feature_cols]  # noqa: N806 -- conventional sklearn name
         X_val_full = validate[feature_cols]  # noqa: N806
 
         for model_name, model_fn in (("logreg", make_logreg), ("histgbm", make_histgbm)):
@@ -244,7 +244,7 @@ def run(exp_id: str) -> dict[str, float]:
         # single-feature fits (logreg only, one feature at a time)
         single_feature_aps: dict[str, float] = {}
         for feat_col in single_feature_cols:
-            X_train_single = train[[feat_col]]  # noqa: N806
+            X_train_single = train[[feat_col]]  # noqa: N806 -- conventional sklearn name
             X_val_single = validate[[feat_col]]  # noqa: N806
             m = make_logreg()
             m.fit(X_train_single, y_train)
