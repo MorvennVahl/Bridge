@@ -67,12 +67,15 @@ MAX_ONEHOT_CARDINALITY = 30
     timeout=600,
 )
 def run(exp_id: str) -> dict[str, float]:
+    import time
+
     import numpy as np
     import pandas as pd
     from sklearn.ensemble import HistGradientBoostingClassifier
     from sklearn.metrics import average_precision_score, precision_recall_curve, roc_auc_score
     from sklearn.model_selection import GroupKFold
 
+    run_start = time.monotonic()
     logging.basicConfig(level=logging.INFO)
     log = logging.getLogger("exp05")
 
@@ -464,9 +467,22 @@ def run(exp_id: str) -> dict[str, float]:
     ap_i_mean = float(design_df[design_df["design"] == "I"]["validate_average_precision"].mean())
     ap_seed_spread = ap_m_std
 
-    # ---- step 4: grouped 3-fold CV in train for M and M+I (1 seed) -----------
+    # ---- step 4: grouped CV in train for M and M+I (1 seed) ------------------
+    # Time-budget guard: the 314-column M+I design's CV fits are the single most
+    # expensive step in this script (each fold refits a 300-iter/31-leaf HistGBM on
+    # ~360k rows x 314 cols); skip it if less than 150s of the 600s timeout remain,
+    # since the timeout cannot be extended per the runtime contract. M's CV (smaller,
+    # 217 cols) always runs.
     cv_ap: dict[str, float] = {}
+    cv_skipped: list[str] = []
     for design_name in ["M", "M+I"]:
+        elapsed = time.monotonic() - run_start
+        if design_name == "M+I" and elapsed > 450:
+            log.warning(
+                "skipping grouped CV for M+I: %.0fs elapsed, too little budget left", elapsed
+            )
+            cv_skipped.append(design_name)
+            continue
         cols = designs[design_name]
         X = matrix(train_j, cols)  # noqa: N806 -- conventional sklearn name
         y = train_j["y_semmeddb_treats"]
@@ -700,8 +716,9 @@ def run(exp_id: str) -> dict[str, float]:
         "validate_average_precision": ap_m_mean,
         "validate_average_precision_full": ap_mi_mean,
         "validate_average_precision_indication_only": ap_i_mean,
-        "train_cv_average_precision": cv_ap["M"],
-        "train_cv_average_precision_full": cv_ap["M+I"],
+        "train_cv_average_precision": cv_ap.get("M", float("nan")),
+        "train_cv_average_precision_full": cv_ap.get("M+I", float("nan")),
+        "cv_skipped_count": float(len(cv_skipped)),
         "ap_seed_spread": ap_seed_spread,
         "prevalence_validate": prevalence_val,
         "prevalence_train": prevalence_train,
@@ -777,6 +794,13 @@ def main() -> None:
     atc_imp = metrics.get("atc_importance_sum", float("nan"))
     dominates = (fa_rank == fa_rank and fa_rank <= 5) or (atc_imp == atc_imp and atc_imp > 0.05)
 
+    cv_skip_note = ""
+    if metrics.get("cv_skipped_count", 0):
+        cv_skip_note = (
+            "M+I train CV AP was also skipped (314-col design, budget exhausted); only "
+            "the M design CV AP is reported. "
+        )
+
     findings = (
         f"{'YES' if viable else 'NO'} -- the efficacy half of the project is "
         f"{'workable' if viable else 'not workable'} on y_semmeddb_treats using mechanism-only "
@@ -794,6 +818,7 @@ def main() -> None:
         f"Secondary target y_semmeddb_causes was skipped this run (budget fallback, after "
         f"cutting to {len(SEEDS)} seeds and 2-fold CV) because the I-block cardinality fix "
         f"pushed real per-fit cost above the spec's original budget assumption. "
+        f"{cv_skip_note}"
         f"Recommendation: {'invest in a real indication layer (DailyMed / OHDSI indication set) before further efficacy-side modelling effort, per AGENT.md sec4' if not viable or dominates else 'mechanism-only features already carry transportable efficacy signal; an indication layer would still help but is not gating further modelling'}. "
         f"Step 5 (exp03-style gene-tier neighbour feature vs TREATS) was not attempted this run "
         f"due to budget; see step5 note in run logs and {exp}_column_assignment.csv for the "
