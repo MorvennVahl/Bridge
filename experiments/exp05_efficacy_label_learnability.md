@@ -157,16 +157,25 @@ it unstated wastes the run.
 exp = ln.register(
     agent="exp05",
     title="Efficacy label learnability: mechanism features vs indication-encoding features",
-    hypothesis=("y_semmeddb_treats is predictable above 3x prevalence from mechanism and "
-                "target features alone, and the gap to a model including ATC, indication "
-                "class and drug age measures how much of the signal is 'well-studied drug' "
-                "rather than biology."),
-    approach=("Three designs M / I / M+I with an audited column assignment, HistGBM at 31 "
-              "leaves, 5 seeds for the AP spread, grouped 3-fold CV in train, one validate "
-              "pass per design-seed. y_semmeddb_causes carried as an indicative secondary."),
+    hypothesis=(
+        "y_semmeddb_treats is predictable above 3x prevalence from mechanism and "
+        "target features alone, and the gap to a model including ATC, indication "
+        "class and drug age measures how much of the signal is 'well-studied drug' "
+        "rather than biology."
+    ),
+    approach=(
+        "Three designs M / I / M+I with an audited column assignment, HistGBM at 31 "
+        "leaves, 5 seeds for the AP spread, grouped 3-fold CV in train, one validate "
+        "pass per design-seed. y_semmeddb_causes carried as an indicative secondary."
+    ),
     label="y_semmeddb_treats",
-    features=["mechanism_block", "target_biology_block", "condition_intrinsic", "degree",
-              "indication_encoding_block"],
+    features=[
+        "mechanism_block",
+        "target_biology_block",
+        "condition_intrinsic",
+        "degree",
+        "indication_encoding_block",
+    ],
     split="train/validate, grouped by primary target gene",
 )
 ```

@@ -49,7 +49,7 @@ import os
 import platform
 import subprocess
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -58,15 +58,28 @@ LAB = ROOT / "lab"
 NOTEBOOK = LAB / "notebook.jsonl"
 TEST_SEAL = LAB / "TEST_SET_SEAL.txt"
 
-VALID_LABELS = {"y_faers_signal", "y_semmeddb_causes", "y_semmeddb_treats",
-                "y_any_harm", "faers_prr", "other"}
+VALID_LABELS = {
+    "y_faers_signal",
+    "y_semmeddb_causes",
+    "y_semmeddb_treats",
+    "y_any_harm",
+    "faers_prr",
+    "other",
+}
 
 
 def _git_commit() -> str | None:
     try:
-        return subprocess.run(["git", "rev-parse", "--short", "HEAD"], cwd=ROOT,
-                              capture_output=True, text=True, timeout=10
-                              ).stdout.strip() or None
+        return (
+            subprocess.run(
+                ["git", "rev-parse", "--short", "HEAD"],
+                cwd=ROOT,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            ).stdout.strip()
+            or None
+        )
     except Exception:
         return None
 
@@ -93,8 +106,7 @@ def read() -> list[dict[str, Any]]:
     return out
 
 
-def note(agent: str, kind: str, title: str, body: str,
-         data: dict[str, Any] | None = None) -> str:
+def note(agent: str, kind: str, title: str, body: str, data: dict[str, Any] | None = None) -> str:
     """Append a durable non-experiment entry: dataset state, a decision, a caveat.
 
     This is the lab's shared memory for things that are true about the data rather
@@ -105,23 +117,41 @@ def note(agent: str, kind: str, title: str, body: str,
     `kind` is free text; the ones in use are "dataset_state", "decision",
     "caveat", "round_plan".
     """
-    note_id = f"note_{datetime.now(timezone.utc):%Y%m%d}_{uuid.uuid4().hex[:6]}"
-    _append({"schema": 1, "event": "note", "id": note_id, "agent": agent,
-             "kind": kind, "title": title, "body": body, "data": data or {},
-             "git_commit": _git_commit(),
-             "ts": datetime.now(timezone.utc).isoformat()})
+    note_id = f"note_{datetime.now(UTC):%Y%m%d}_{uuid.uuid4().hex[:6]}"
+    _append(
+        {
+            "schema": 1,
+            "event": "note",
+            "id": note_id,
+            "agent": agent,
+            "kind": kind,
+            "title": title,
+            "body": body,
+            "data": data or {},
+            "git_commit": _git_commit(),
+            "ts": datetime.now(UTC).isoformat(),
+        }
+    )
     return note_id
 
 
 def notes(kind: str | None = None) -> list[dict[str, Any]]:
     """Every note entry, oldest first, optionally filtered by kind."""
-    return [e for e in read()
-            if e.get("event") == "note" and (kind is None or e.get("kind") == kind)]
+    return [
+        e for e in read() if e.get("event") == "note" and (kind is None or e.get("kind") == kind)
+    ]
 
 
-def register(agent: str, title: str, hypothesis: str, approach: str,
-             label: str, features: list[str] | None = None,
-             split: str = "", notes: str = "") -> str:
+def register(
+    agent: str,
+    title: str,
+    hypothesis: str,
+    approach: str,
+    label: str,
+    features: list[str] | None = None,
+    split: str = "",
+    notes: str = "",
+) -> str:
     """Record an experiment BEFORE running it. Returns its experiment id.
 
     Registering first is what makes a negative result trustworthy: the
@@ -130,20 +160,38 @@ def register(agent: str, title: str, hypothesis: str, approach: str,
     """
     if label not in VALID_LABELS:
         raise ValueError(f"label must be one of {sorted(VALID_LABELS)}, got {label!r}")
-    exp_id = f"exp_{datetime.now(timezone.utc):%Y%m%d}_{uuid.uuid4().hex[:6]}"
-    _append({"schema": 1, "event": "register", "id": exp_id, "agent": agent,
-             "title": title, "hypothesis": hypothesis, "approach": approach,
-             "label": label, "features": features or [], "split": split,
-             "notes": notes, "git_commit": _git_commit(),
-             "host": platform.node() if os.environ.get("BRIDGE_LOG_HOST") else None,
-             "ts": datetime.now(timezone.utc).isoformat()})
+    exp_id = f"exp_{datetime.now(UTC):%Y%m%d}_{uuid.uuid4().hex[:6]}"
+    _append(
+        {
+            "schema": 1,
+            "event": "register",
+            "id": exp_id,
+            "agent": agent,
+            "title": title,
+            "hypothesis": hypothesis,
+            "approach": approach,
+            "label": label,
+            "features": features or [],
+            "split": split,
+            "notes": notes,
+            "git_commit": _git_commit(),
+            "host": platform.node() if os.environ.get("BRIDGE_LOG_HOST") else None,
+            "ts": datetime.now(UTC).isoformat(),
+        }
+    )
     return exp_id
 
 
-def complete(exp_id: str, metrics: dict[str, float], findings: str,
-             artifacts: list[str] | None = None, next_steps: str = "",
-             used_test_set: bool = False, supersedes: str | None = None,
-             failed: bool = False) -> None:
+def complete(
+    exp_id: str,
+    metrics: dict[str, float],
+    findings: str,
+    artifacts: list[str] | None = None,
+    next_steps: str = "",
+    used_test_set: bool = False,
+    supersedes: str | None = None,
+    failed: bool = False,
+) -> None:
     """Record the outcome. Call this even when the experiment failed or was null.
 
     A null result that is logged saves every later agent the same run. A null
@@ -153,12 +201,22 @@ def complete(exp_id: str, metrics: dict[str, float], findings: str,
         raise ValueError("metrics must be a non-empty dict, even for a null result")
     if not findings.strip():
         raise ValueError("findings must say what was learned, including 'nothing'")
-    _append({"schema": 1, "event": "complete", "id": exp_id,
-             "metrics": metrics, "findings": findings,
-             "artifacts": artifacts or [], "next_steps": next_steps,
-             "used_test_set": bool(used_test_set), "supersedes": supersedes,
-             "failed": bool(failed), "git_commit": _git_commit(),
-             "ts": datetime.now(timezone.utc).isoformat()})
+    _append(
+        {
+            "schema": 1,
+            "event": "complete",
+            "id": exp_id,
+            "metrics": metrics,
+            "findings": findings,
+            "artifacts": artifacts or [],
+            "next_steps": next_steps,
+            "used_test_set": bool(used_test_set),
+            "supersedes": supersedes,
+            "failed": bool(failed),
+            "git_commit": _git_commit(),
+            "ts": datetime.now(UTC).isoformat(),
+        }
+    )
 
 
 def validate_evaluations(agent: str | None = None) -> int:
@@ -190,10 +248,16 @@ def leaderboard(label: str | None = None, metric: str = "validate_average_precis
         if label and r.get("label") != label:
             continue
         if metric in (e.get("metrics") or {}):
-            rows.append({"id": e["id"], "agent": r.get("agent"),
-                         "title": r.get("title"), "label": r.get("label"),
-                         metric: e["metrics"][metric],
-                         "used_test_set": e.get("used_test_set")})
+            rows.append(
+                {
+                    "id": e["id"],
+                    "agent": r.get("agent"),
+                    "title": r.get("title"),
+                    "label": r.get("label"),
+                    metric: e["metrics"][metric],
+                    "used_test_set": e.get("used_test_set"),
+                }
+            )
     rows.sort(key=lambda r: r[metric], reverse=True)
     return rows
 
@@ -214,4 +278,5 @@ def check_test_seal() -> None:
             "The test set is sealed. Use train for fitting and validate for "
             "model selection. If you believe the project is genuinely ready for "
             "its single final evaluation, say so in your report and ask the "
-            "human to unseal it — do not create lab/TEST_SET_SEAL.txt yourself.")
+            "human to unseal it — do not create lab/TEST_SET_SEAL.txt yourself."
+        )
