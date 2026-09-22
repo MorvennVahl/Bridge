@@ -36,9 +36,9 @@ To call a deployed function's API from other code instead of the CLI:
 import modal
 
 fn = modal.Function.from_name("app-name", "function-name")
-result = fn.remote(x)          # sync call, blocks for the result
-call = fn.spawn(x)             # async call, returns a FunctionCall handle
-result = call.get()            # block on that handle later
+result = fn.remote(x)  # sync call, blocks for the result
+call = fn.spawn(x)  # async call, returns a FunctionCall handle
+result = call.get()  # block on that handle later
 ```
 
 `from_name` looks up a function in an already-`deploy`ed app by app name and function name —
