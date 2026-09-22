@@ -135,13 +135,17 @@ new molecule be before this approach stops working.
 exp = ln.register(
     agent="exp12",
     title="Transportability decay by target-space distance, with a family-level split",
-    hypothesis=("drug_macro_auc decays monotonically across a five-rung target-space distance "
-                "ladder and is indistinguishable from the per-rung p_c floor for drugs with no "
-                "target annotation."),
-    approach=("Score the fitted exp07 union and exp08 neighbour models across rungs D0-D4 "
-              "with per-rung floors and bootstrap CIs; rebuild one train/validate split "
-              "grouped by chembl_protein_class_leaf for a family-level fold boundary; "
-              "regress per-drug AUC on minimum target-space distance."),
+    hypothesis=(
+        "drug_macro_auc decays monotonically across a five-rung target-space distance "
+        "ladder and is indistinguishable from the per-rung p_c floor for drugs with no "
+        "target annotation."
+    ),
+    approach=(
+        "Score the fitted exp07 union and exp08 neighbour models across rungs D0-D4 "
+        "with per-rung floors and bootstrap CIs; rebuild one train/validate split "
+        "grouped by chembl_protein_class_leaf for a family-level fold boundary; "
+        "regress per-drug AUC on minimum target-space distance."
+    ),
     label="y_faers_signal",
     features=["intrinsic_union", "nb_excess_gene", "p_c", "degree"],
     split="validate stratified by target-space distance, plus a leaf-level regrouped split",

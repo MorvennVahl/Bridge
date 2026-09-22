@@ -126,13 +126,17 @@ evidence or association".
 exp = ln.register(
     agent="exp14",
     title="Gene overlap between drug target genes and condition-implicated genes",
-    hypothesis=("Genetic-association-weighted gene overlap adds >=0.02 drug_macro_auc over "
-                "exp08's neighbour model, concentrated on disease-arm conditions."),
-    approach=("Sparse condition-gene and drug-gene matrices; raw, ot_score-weighted, "
-              "genetic-association-only, IDF-weighted and Jaccard overlaps; dt_literature "
-              "kept as a separate diagnostic; nested on top of degree, p_c, intrinsic union "
-              "and nb_excess_gene; grouped 3-fold CV on drug_macro_auc; stratified by "
-              "gene_arm, ot_truncated and match tier."),
+    hypothesis=(
+        "Genetic-association-weighted gene overlap adds >=0.02 drug_macro_auc over "
+        "exp08's neighbour model, concentrated on disease-arm conditions."
+    ),
+    approach=(
+        "Sparse condition-gene and drug-gene matrices; raw, ot_score-weighted, "
+        "genetic-association-only, IDF-weighted and Jaccard overlaps; dt_literature "
+        "kept as a separate diagnostic; nested on top of degree, p_c, intrinsic union "
+        "and nb_excess_gene; grouped 3-fold CV on drug_macro_auc; stratified by "
+        "gene_arm, ot_truncated and match tier."
+    ),
     label="y_faers_signal",
     features=["degree", "p_c", "intrinsic_union", "nb_excess_gene", "gene_overlap"],
     split="train/validate, grouped by primary target gene",
