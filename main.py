@@ -1,4 +1,3 @@
-
 import modal
 
 app = modal.App("example-get-started")
