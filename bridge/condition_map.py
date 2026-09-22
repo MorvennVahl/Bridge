@@ -65,6 +65,7 @@ def token_key(normalised: str) -> str:
 # reference indexes
 # --------------------------------------------------------------------------- #
 
+
 def load_open_targets_diseases() -> pd.DataFrame:
     return pd.read_parquet(REF / "ot" / "disease__disease.parquet")
 
@@ -83,8 +84,14 @@ def load_hpo_terms() -> dict[str, dict]:
             line = line.rstrip("\n")
             if line == "[Term]":
                 flush(cur)
-                cur = {"id": None, "name": None, "syn": [], "xref": [],
-                       "is_a": [], "obsolete": False}
+                cur = {
+                    "id": None,
+                    "name": None,
+                    "syn": [],
+                    "xref": [],
+                    "is_a": [],
+                    "obsolete": False,
+                }
             elif line.startswith("[") and line.endswith("]"):
                 flush(cur)
                 cur = None
@@ -135,15 +142,14 @@ def build_indexes(ot: pd.DataFrame, hpo: dict[str, dict], sssom: pd.DataFrame):
 
     disease = ot[ot.id.str.startswith(DISEASE_PREFIXES)]
     for row in disease.itertuples(index=False):
-        meta[row.id] = {"label": row.name, "arm": "disease",
-                        "ontology": row.id.split("_")[0]}
+        meta[row.id] = {"label": row.name, "arm": "disease", "ontology": row.id.split("_")[0]}
         syns = [] if row.exactSynonyms is None else list(row.exactSynonyms)
-        for k in [row.name] + syns:
+        for k in [row.name, *syns]:
             nk = normalise(k)
             if nk:
                 label[nk].add(row.id)
                 token[token_key(nk)].add(row.id)
-        for xref in ([] if row.dbXRefs is None else list(row.dbXRefs)):
+        for xref in [] if row.dbXRefs is None else list(row.dbXRefs):
             if str(xref).startswith("SCTID:"):
                 sctid[str(xref).split(":", 1)[1]].add(row.id)
 
@@ -160,8 +166,9 @@ def build_indexes(ot: pd.DataFrame, hpo: dict[str, dict], sssom: pd.DataFrame):
     for row in snomed_rows.itertuples(index=False):
         mondo_id = row.subject_id.replace(":", "_")
         sctid[row.object_id.split(":", 1)[1]].add(mondo_id)
-        meta.setdefault(mondo_id, {"label": row.subject_label, "arm": "disease",
-                                   "ontology": "MONDO"})
+        meta.setdefault(
+            mondo_id, {"label": row.subject_label, "arm": "disease", "ontology": "MONDO"}
+        )
 
     return label, token, sctid, meta
 
@@ -170,8 +177,10 @@ def build_indexes(ot: pd.DataFrame, hpo: dict[str, dict], sssom: pd.DataFrame):
 # tiered matching
 # --------------------------------------------------------------------------- #
 
-def map_conditions(conditions: pd.DataFrame, label, token, sctid, meta,
-                   concept_codes: pd.Series | None = None) -> pd.DataFrame:
+
+def map_conditions(
+    conditions: pd.DataFrame, label, token, sctid, meta, concept_codes: pd.Series | None = None
+) -> pd.DataFrame:
     """One row per (condition, matched ontology term), tagged with its tier.
 
     `conditions` needs condition_concept_id and condition_name.
@@ -195,28 +204,53 @@ def map_conditions(conditions: pd.DataFrame, label, token, sctid, meta,
             matches.setdefault(oid, "3_token_exact")
 
         if not matches:
-            rows.append({"condition_concept_id": cid,
-                         "condition_name": row.condition_name,
-                         "ontology_id": None, "ontology": None, "arm": None,
-                         "ontology_label": None, "match_tier": "0_unmatched"})
+            rows.append(
+                {
+                    "condition_concept_id": cid,
+                    "condition_name": row.condition_name,
+                    "ontology_id": None,
+                    "ontology": None,
+                    "arm": None,
+                    "ontology_label": None,
+                    "match_tier": "0_unmatched",
+                }
+            )
             continue
         for oid, tier in matches.items():
             m = meta.get(oid, {})
-            rows.append({"condition_concept_id": cid,
-                         "condition_name": row.condition_name,
-                         "ontology_id": oid, "ontology": m.get("ontology"),
-                         "arm": m.get("arm"), "ontology_label": m.get("label"),
-                         "match_tier": tier})
+            rows.append(
+                {
+                    "condition_concept_id": cid,
+                    "condition_name": row.condition_name,
+                    "ontology_id": oid,
+                    "ontology": m.get("ontology"),
+                    "arm": m.get("arm"),
+                    "ontology_label": m.get("label"),
+                    "match_tier": tier,
+                }
+            )
     return pd.DataFrame(rows)
 
 
 def coverage_report(mapped: pd.DataFrame):
     """Return (best-tier-per-condition, tier counts)."""
-    best = (mapped.sort_values("match_tier")
-                  .groupby("condition_concept_id", as_index=False)
-                  .first()[["condition_concept_id", "condition_name", "match_tier",
-                            "arm", "ontology", "ontology_id", "ontology_label"]])
-    counts = (best.match_tier.value_counts().rename("conditions")
-                  .rename_axis("best_tier").reset_index())
+    best = (
+        mapped.sort_values("match_tier")
+        .groupby("condition_concept_id", as_index=False)
+        .first()[
+            [
+                "condition_concept_id",
+                "condition_name",
+                "match_tier",
+                "arm",
+                "ontology",
+                "ontology_id",
+                "ontology_label",
+            ]
+        ]
+    )
+    counts = (
+        best.match_tier.value_counts().rename("conditions").rename_axis("best_tier").reset_index()
+    )
     counts["share"] = (counts.conditions / len(best)).round(4)
     return best, counts
