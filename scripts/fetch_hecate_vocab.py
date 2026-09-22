@@ -19,6 +19,7 @@ Outputs (data/ref/):
 
 from __future__ import annotations
 
+import contextlib
 import json
 import sys
 import time
@@ -56,19 +57,24 @@ def get_json(url: str, tries: int = 4):
 
 
 def condition_ids() -> list[int]:
-    ids = pd.read_csv(DATA / "cem_ingredient_condition_associations.csv",
-                      usecols=["condition_concept_id"])
+    ids = pd.read_csv(
+        DATA / "cem_ingredient_condition_associations.csv", usecols=["condition_concept_id"]
+    )
     return sorted(ids.condition_concept_id.unique().tolist())
 
 
 def flatten_ancestors(node: dict, acc: list, depth: int = 1) -> None:
     """Walk the nested /expand response, recording each ancestor once."""
-    acc.append({"concept_id": node.get("concept_id"),
-                "concept_name": node.get("concept_name"),
-                "concept_code": node.get("concept_code"),
-                "concept_class_id": node.get("concept_class_id"),
-                "level": node.get("level") if node.get("level") is not None else depth})
-    for child in (node.get("children") or []):
+    acc.append(
+        {
+            "concept_id": node.get("concept_id"),
+            "concept_name": node.get("concept_name"),
+            "concept_code": node.get("concept_code"),
+            "concept_class_id": node.get("concept_class_id"),
+            "level": node.get("level") if node.get("level") is not None else depth,
+        }
+    )
+    for child in node.get("children") or []:
         # children of an ancestor are siblings/self, not ancestors; only recurse
         # through nodes that are themselves ancestors of the seed concept.
         if child.get("children"):
@@ -81,10 +87,9 @@ def done_ids(path: Path, key: str = "concept_id") -> set[int]:
     seen = set()
     with open(path) as fh:
         for line in fh:
-            try:
+            # A partial run can leave a truncated final line; skipping it is the point.
+            with contextlib.suppress(Exception):
                 seen.add(json.loads(line)[key])
-            except Exception:
-                pass
     return seen
 
 
@@ -118,11 +123,12 @@ def main() -> None:
     print(f"hierarchy to fetch: {len(todo_a)}", flush=True)
 
     def fetch_ancestors(cid: int):
-        resp = get_json(f"{BASE}/api/concepts/{cid}/expand"
-                        f"?childlevels=0&parentlevels={PARENT_LEVELS}")
+        resp = get_json(
+            f"{BASE}/api/concepts/{cid}/expand?childlevels=0&parentlevels={PARENT_LEVELS}"
+        )
         acc: list = []
         if resp:
-            for root in (resp.get("concepts") or []):
+            for root in resp.get("concepts") or []:
                 flatten_ancestors(root, acc)
         acc = [a for a in acc if a.get("concept_id") != cid]
         return {"concept_id": cid, "n_ancestors": len(acc), "ancestors": acc}

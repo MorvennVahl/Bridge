@@ -202,8 +202,16 @@ do not, and what result would convince you it does not.
 
 ```python
 from bridge import labnotebook as ln
-exp = ln.register(agent="<your id>", title=..., hypothesis=..., approach=...,
-                  label="y_faers_signal", features=[...], split="...")
+
+exp = ln.register(
+    agent="<your id>",
+    title=...,
+    hypothesis=...,
+    approach=...,
+    label="y_faers_signal",
+    features=[...],
+    split="...",
+)
 ```
 
 **Run.** Fit on train, select inside train with grouped CV, evaluate once on
@@ -213,12 +221,17 @@ filename.
 **Log.** Always, including failures and nulls:
 
 ```python
-ln.complete(exp, metrics={"validate_average_precision": ...,
-                          "train_cv_average_precision": ...,
-                          "baseline_degree_only_ap": ...},
-            findings="what you now believe and why, in specifics",
-            artifacts=["results/exp_..._calibration.png"],
-            next_steps="the one thing you would do next")
+ln.complete(
+    exp,
+    metrics={
+        "validate_average_precision": ...,
+        "train_cv_average_precision": ...,
+        "baseline_degree_only_ap": ...,
+    },
+    findings="what you now believe and why, in specifics",
+    artifacts=["results/exp_..._calibration.png"],
+    next_steps="the one thing you would do next",
+)
 ```
 
 A good `findings` states the effect size, the subgroup where it concentrates, and

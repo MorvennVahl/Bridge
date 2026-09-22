@@ -189,15 +189,25 @@ class-level similarity is available".
 exp = ln.register(
     agent="exp03",
     title="Same-target neighbour transport across the primary-gene group boundary",
-    hypothesis=("A train-only shrunk neighbour flag-rate beats the degree floor on validate "
-                "pairs with >=1 neighbour, and the gain decays as similarity loosens from "
-                "shared gene to shared protein class."),
-    approach=("Three similarity tiers (gene, protein-class leaf, protein-class L1), "
-              "empirical-Bayes shrinkage k=10 toward the condition's train rate, "
-              "leave-one-drug-out on train rows, HistGBM, AP by neighbour-count bucket."),
+    hypothesis=(
+        "A train-only shrunk neighbour flag-rate beats the degree floor on validate "
+        "pairs with >=1 neighbour, and the gain decays as similarity loosens from "
+        "shared gene to shared protein class."
+    ),
+    approach=(
+        "Three similarity tiers (gene, protein-class leaf, protein-class L1), "
+        "empirical-Bayes shrinkage k=10 toward the condition's train rate, "
+        "leave-one-drug-out on train rows, HistGBM, AP by neighbour-count bucket."
+    ),
     label="y_faers_signal",
-    features=["degree", "nb_rate_gene", "nb_rate_class_leaf", "nb_rate_class_L1",
-              "nb_rate_primary_gene", "nb_rate_action_matched"],
+    features=[
+        "degree",
+        "nb_rate_gene",
+        "nb_rate_class_leaf",
+        "nb_rate_class_L1",
+        "nb_rate_primary_gene",
+        "nb_rate_action_matched",
+    ],
     split="train/validate, grouped by primary target gene",
 )
 ```

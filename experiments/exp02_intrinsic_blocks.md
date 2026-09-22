@@ -172,12 +172,16 @@ essentially all of it", that is the most valuable sentence this round can produc
 exp = ln.register(
     agent="exp02",
     title="Nested ablation: degree, drug-intrinsic, condition-intrinsic, union",
-    hypothesis=("Drug-intrinsic features add >=0.02 AP over the degree baseline, condition-"
-                "intrinsic features add a further increment, and the no-interaction union "
-                "falls short of pair-level biology."),
-    approach=("Four nested feature designs, one fixed HistGBM, grouped 3-fold CV in train, "
-              "one validate pass per design, plus a mechanism-subset refit to separate "
-              "ChEMBL missingness from pharmacology."),
+    hypothesis=(
+        "Drug-intrinsic features add >=0.02 AP over the degree baseline, condition-"
+        "intrinsic features add a further increment, and the no-interaction union "
+        "falls short of pair-level biology."
+    ),
+    approach=(
+        "Four nested feature designs, one fixed HistGBM, grouped 3-fold CV in train, "
+        "one validate pass per design, plus a mechanism-subset refit to separate "
+        "ChEMBL missingness from pharmacology."
+    ),
     label="y_faers_signal",
     features=["degree", "drug_intrinsic", "condition_intrinsic", "union"],
     split="train/validate, grouped by primary target gene",
