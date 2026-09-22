@@ -25,7 +25,7 @@ evidence and predicted for pairs that do not.
 | file | rows | content |
 |---|---|---|
 | `data/cem_ingredients.csv` | 4,276 | RxNorm ingredients with at least one CEM association (concept id, name) |
-| `data/cem_ingredient_condition_associations.csv` | 1,447,172 | One row per ingredient–condition pair with FAERS disproportionality stats, EU label counts, and SemMedDB relationship types. Source: OHDSI Common Evidence Model, `cem_output.cem_unified`. Not committed (115 MB, over GitHub's file limit); regenerate with the query below. |
+| `data/cem_ingredient_condition_associations.csv` | 1,447,172 | One row per ingredient–condition pair with FAERS disproportionality stats, EU label counts, and SemMedDB relationship types. Source: OHDSI Common Evidence Model, `cem_output.cem_unified`. Stored via Git LFS (115 MB); `git lfs pull` after cloning, or regenerate with the query below. |
 
 Both files are restricted to RxNorm `Ingredient` concepts on the drug side and standard
 `Condition`-domain concepts on the outcome side.
