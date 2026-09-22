@@ -18,6 +18,10 @@ All of `data/` is Git LFS. Run `git lfs pull` first; an unpulled file is a ~130-
 | `target_features.csv` | target × protein component | `target_chembl_id` |
 | `ingredient_features_label_adjacent.csv` | ingredient | `omop_concept_id` |
 | `ref/` | MONDO SSSOM, HPO, Open Targets parquet | ontology ids |
+| `ref/omop/concept.csv` | condition (5,631) | `condition_concept_id`, `concept_code` (SNOMED) |
+| `ref/omop/concept_source_codes.csv` | condition × source vocabulary | `condition_concept_id` |
+| `ref/omop/concept_ancestor.csv` | condition × ancestor | `condition_concept_id` |
+| `ref/omop/concept_synonym.csv` | condition × synonym | `condition_concept_id` |
 
 `omop_concept_id` and `ingredient_concept_id` are the same OMOP RxNorm Ingredient id. Column
 definitions are in `data_dictionary.csv`.
@@ -32,7 +36,9 @@ definitions are in `data_dictionary.csv`.
 - **FAERS is noisy.** Median case count is 2. Threshold `faers_case_count` and `faers_prr`.
 - **`in_eu_label` is false on every row.** Ignore that column.
 - **Conditions are SNOMED only.** Only ~35% map to MONDO by exact SNOMED code. Mapping goes
-  through `bridge/condition_map.py`, which needs a vocabulary export at `data/condition_concept.csv`.
+  through `bridge/condition_map.py`; pass it `condition_concept_codes()`, which reads the
+  OMOP vocabulary export at `data/ref/omop/concept.csv`. Omit it and tier 1 is skipped
+  silently.
 
 ## Load
 
