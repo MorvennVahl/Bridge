@@ -38,6 +38,7 @@ definitions are in `data_dictionary.csv`.
 
 ```python
 import pandas as pd
+
 assoc = pd.read_csv("data/cem_ingredient_condition_associations.csv")
 feats = pd.read_csv("data/ingredient_features.csv")
 X = assoc.merge(feats, left_on="ingredient_concept_id", right_on="omop_concept_id")
