@@ -4,28 +4,23 @@ Predict, for a drug–condition pair with no real-world data, whether the drug i
 **treat** the condition or **cause** it, using biology (targets, genes, pathways, disease
 hierarchy) as the bridge between drugs that have real-world evidence and drugs that do not.
 
-```mermaid
-flowchart LR
-    D[Ingredient] -->|has_mechanism| T[Target / protein]
-    T -->|encoded_by| G[Gene]
-    G -->|member_of| P[Pathway]
-    G -->|associated_with| C[Condition]
-    P -.->|implicated_in| C
-    C -->|is_a| C
-    D ==>|RWD label: treats / causes| C
-    style D fill:#dbeafe,stroke:#1d4ed8
-    style C fill:#fee2e2,stroke:#b91c1c
+```
+Ingredient --has_mechanism--> Target --encoded_by--> Gene --member_of--> Pathway
+                                                       |                    :
+                                                       +--associated_with-->+
+                                                                            v
+Ingredient ==================== RWD label: treats / causes ===========> Condition --is_a--> Condition
 ```
 
-Solid edges are inputs. The bold edge is the label, learned from pairs that have real-world
-evidence and predicted for pairs that do not.
+Single-line edges are inputs. The double-line edge is the label, learned from pairs that have
+real-world evidence and predicted for pairs that do not.
 
 ## Data in this repo
 
 | file | rows | content |
 |---|---|---|
 | `data/cem_ingredients.csv` | 4,276 | RxNorm ingredients with at least one CEM association (concept id, name) |
-| `data/cem_ingredient_condition_associations.csv` | 1,447,172 | One row per ingredient–condition pair with FAERS disproportionality stats, EU label counts, and SemMedDB relationship types. Source: OHDSI Common Evidence Model, `cem_output.cem_unified`. Not committed (115 MB, over GitHub's file limit); regenerate with the query below. |
+| `data/cem_ingredient_condition_associations.csv` | 1,447,172 | One row per ingredient–condition pair with FAERS disproportionality stats, EU label counts, and SemMedDB relationship types. Source: OHDSI Common Evidence Model, `cem_output.cem_unified`. Stored via Git LFS (115 MB); `git lfs pull` after cloning, or regenerate with the query below. |
 
 Both files are restricted to RxNorm `Ingredient` concepts on the drug side and standard
 `Condition`-domain concepts on the outcome side.

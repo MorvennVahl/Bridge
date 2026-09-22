@@ -11,9 +11,6 @@ venv/
 # Modal skill install (regenerable via `modal skills install`)
 .agents/
 
-# Data
-data/cem_ingredient_condition_associations.csv
-
 # macOS / R
 .DS_Store
 .Rproj.user
