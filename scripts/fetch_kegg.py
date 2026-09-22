@@ -7,11 +7,22 @@ Name resolution uses the bulk `list/drug` index (one request) rather than per-na
 Outputs: handoff/kegg_list.txt, handoff/kegg_entries.json,
          handoff/kegg_name_match.csv, handoff/provenance_kegg.json
 """
-import json, re, time, datetime, unicodedata, csv
-import requests
-import pandas as pd
 
-NOW = lambda: datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+import datetime
+import json
+import re
+import time
+import unicodedata
+from pathlib import Path
+
+import pandas as pd
+import requests
+
+
+def utc_now() -> str:
+    return datetime.datetime.now(datetime.UTC).isoformat(timespec="seconds")
+
+
 K = "https://rest.kegg.jp"
 
 
@@ -38,7 +49,7 @@ def kget(path, tries=4):
 
 # ---- 1. bulk name index ------------------------------------------------------
 listing = kget("list/drug")
-open("handoff/kegg_list.txt", "w").write(listing)
+Path("handoff/kegg_list.txt").write_text(listing)
 idx = {}
 for line in listing.rstrip("\n").split("\n"):
     if not line.strip():
@@ -58,20 +69,43 @@ matches = []
 for nm in ing.ingredient_name:
     k = norm(nm)
     cands = idx.get(k, [])
-    matches.append({"ingredient_name": nm, "kegg_drug_id": sorted(cands)[0] if cands else None,
-                    "kegg_n_candidates": len(cands),
-                    "kegg_match_method": "exact_normalized_name" if cands else None})
+    matches.append(
+        {
+            "ingredient_name": nm,
+            "kegg_drug_id": sorted(cands)[0] if cands else None,
+            "kegg_n_candidates": len(cands),
+            "kegg_match_method": "exact_normalized_name" if cands else None,
+        }
+    )
 mdf = pd.DataFrame(matches)
 mdf.to_csv("handoff/kegg_name_match.csv", index=False)
-dids = sorted({d for d in mdf.kegg_drug_id.dropna().unique()})
-print("matched ingredients", mdf.kegg_drug_id.notna().sum(), "| unique kegg ids", len(dids), flush=True)
+dids = sorted(set(mdf.kegg_drug_id.dropna().unique()))
+print(
+    "matched ingredients",
+    mdf.kegg_drug_id.notna().sum(),
+    "| unique kegg ids",
+    len(dids),
+    flush=True,
+)
 
 # ---- 3. entry records --------------------------------------------------------
-FIELDS = ("ENTRY", "NAME", "FORMULA", "EFFICACY", "TARGET", "METABOLISM", "INTERACTION",
-          "REMARK", "COMMENT", "BRITE", "DBLINKS", "STR_MAP")
+FIELDS = (
+    "ENTRY",
+    "NAME",
+    "FORMULA",
+    "EFFICACY",
+    "TARGET",
+    "METABOLISM",
+    "INTERACTION",
+    "REMARK",
+    "COMMENT",
+    "BRITE",
+    "DBLINKS",
+    "STR_MAP",
+)
 entries = {}
 for i in range(0, len(dids), 10):
-    batch = dids[i:i + 10]
+    batch = dids[i : i + 10]
     txt = kget("get/" + "+".join("dr:" + d for d in batch))
     for rec in txt.split("\n///\n"):
         if not rec.strip():
@@ -89,13 +123,23 @@ for i in range(0, len(dids), 10):
     if (i // 10) % 20 == 0:
         print("  entries", len(entries), flush=True)
     time.sleep(0.25)
-json.dump(entries, open("handoff/kegg_entries.json", "w"))
-json.dump({"source": "KEGG DRUG", "base_url": K,
-           "endpoints": {"name_index": f"{K}/list/drug", "records": f"{K}/get/dr:<id> (10 per request)"},
-           "n_entries_in_release": len(listing.strip().split("\n")),
-           "n_ingredients_matched": int(mdf.kegg_drug_id.notna().sum()),
-           "n_records_fetched": len(entries),
-           "license_note": "KEGG is free for academic use; see https://www.kegg.jp/kegg/legal.html",
-           "retrieved_utc": NOW()},
-          open("handoff/provenance_kegg.json", "w"), indent=2)
+Path("handoff/kegg_entries.json").write_text(json.dumps(entries))
+Path("handoff/provenance_kegg.json").write_text(
+    json.dumps(
+        {
+            "source": "KEGG DRUG",
+            "base_url": K,
+            "endpoints": {
+                "name_index": f"{K}/list/drug",
+                "records": f"{K}/get/dr:<id> (10 per request)",
+            },
+            "n_entries_in_release": len(listing.strip().split("\n")),
+            "n_ingredients_matched": int(mdf.kegg_drug_id.notna().sum()),
+            "n_records_fetched": len(entries),
+            "license_note": "KEGG is free for academic use; see https://www.kegg.jp/kegg/legal.html",
+            "retrieved_utc": utc_now(),
+        },
+        indent=2,
+    )
+)
 print("done. records", len(entries), flush=True)
