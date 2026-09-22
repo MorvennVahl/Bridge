@@ -4,6 +4,7 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
+.ruff_cache/
 
 # JetBrains
 .idea/
@@ -14,3 +15,8 @@ venv/
 # macOS / R
 .DS_Store
 .Rproj.user
+
+# Frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
