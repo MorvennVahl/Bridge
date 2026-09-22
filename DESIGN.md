@@ -1,6 +1,8 @@
 # Bridge — design note
 
-Working folder: `~/Desktop/Bridge`. Status: data layer inspected, model layer not built.
+Status: reference data landed on `main`; the condition feature layer is built for both
+halves of the condition set; model layer not started. The condition-to-OMOP join is blocked
+on a vocabulary export (see [docs/vocab-export-spec.md](docs/vocab-export-spec.md)).
 
 ## The goal, as I understand it
 
@@ -78,15 +80,16 @@ Edges:
 - ingredient →`has_mechanism`→ target (ChEMBL, with agonist/antagonist/inhibitor direction)
 - target →`encoded_by`→ gene →`member_of`→ pathway
 - gene →`associated_with`→ condition, **weighted by genetic evidence** (Open Targets
-  association scores; this is the edge that carries most of the causal information)
+  association scores; this is the edge that carries most of the causal information).
+  *Not yet available* — the Open Targets association file is not in the repo, and the
+  stand-in built from OMIM/Orphanet is unweighted and Mendelian-skewed. See below.
 - condition →`is_a`→ condition (hierarchy; gives the model a prior that sibling
   conditions behave alike)
 - ingredient —`RWD`— condition: **the label edge**, not an input feature
 
-The condition-side features you asked about are the weakest part of the current
-setup and the right thing to build next: for each of the 5,631 conditions, a
-feature vector of implicated genes and pathways (Open Targets), position in the
-OMOP/SNOMED hierarchy, organ system, and a phenotype profile (HPO where mappable).
+The condition-side features are now built — genes, hierarchy, therapeutic area and a
+phenotype profile — but keyed on MONDO and HPO ids rather than `condition_concept_id`.
+The section below covers what that mapping costs.
 
 ## On the GNN question
 
@@ -122,9 +125,56 @@ Three requirements on any version of this, GNN or not:
    Negative sampling has to respect that, and negative *controls* (pairs believed to
    have no causal relation) are the standard OHDSI device for calibrating it.
 
+## The condition set is bimodal, and the mapping is the hard part
+
+The plan above assumes every condition can be attached to Open Targets genes and pathways.
+Measured against the reference data, it cannot. Exact lowercase name matching of the 5,631
+condition names reaches 21.2% of Open Targets disease labels and 19.6% of MONDO labels,
+24.7% for the union.
+
+The reason matters more than the number. The unmatched set is dominated by clinical
+findings and symptoms — `abdominal bloating`, `abdominal tenderness`, `abnormal breath
+sounds` — which are not diseases and will never appear in MONDO. They are HPO phenotypes.
+Cases like `aarskog syndrome` are the opposite failure: real MONDO diseases that miss on
+name but would hit on code.
+
+So the condition side splits in two, and is built that way in `src/bridge/`:
+
+| half | source | module | terms | carry an OMOP-reachable code |
+|---|---|---|---|---|
+| disease | MONDO SSSOM + Open Targets | `bridge.disease` | 36,498 | 26,754 (73.3%) |
+| symptom | HPO + Open Targets HPO table | `bridge.hpo` | 20,482 | 11,455 (55.9%), but only 3,443 (16.8%) via SNOMED |
+
+`disease_phenotypes` links the two over 7,585 diseases, so a disease inherits its
+phenotype profile and a phenotype reaches disease-level genes.
+
+### What the data does not give us
+
+- **UMLS is the richest key and we cannot use it.** 22,375 disease terms (61.3%) and 12,839
+  HPO terms carry a UMLS cross-reference — far more than any other vocabulary. OMOP does
+  not distribute UMLS CUIs, so none of it is reachable from a `condition_concept_id`.
+- **`hp.obo` has no usable cross-references** — 92 MedDRA and 38 ICD-10 across 20,482
+  terms, no UMLS or SNOMED. The Open Targets HPO table is what makes the symptom half
+  joinable at all.
+- **Disease-to-gene skews Mendelian.** The Open Targets target-disease association file is
+  not in the repo, so gene evidence comes from HPO's `genes_to_disease` through OMIM and
+  Orphanet: 8,499 MENDELIAN against 646 POLYGENIC. Common polygenic disease — most of what
+  FAERS actually reports on — is thinly covered. Pulling the Open Targets association file
+  is the single highest-value addition to the reference data.
+- **HPO gene annotations arrive pre-propagated.** `phenotype_to_genes.txt` already applies
+  the true path rule: across 114,080 child-ancestor pairs no ancestor was missing a
+  descendant's gene, and `HP:0000118` alone carries 5,268 of the 5,276 distinct genes. A
+  raw gene count therefore measures tree position, not biology, so terms carry Resnik
+  information content and a per-gene specificity flag instead.
+
 ## Next step
 
-Build the condition feature layer: 5,631 OMOP condition concepts →
-gene / pathway / hierarchy / phenotype features, saved as a table keyed by
-`condition_concept_id`. Nothing else in the plan can be evaluated until both sides
-of the pair have features.
+Both halves are keyed on ontology codes; the CEM table gives only `condition_concept_id`
+and a name. The missing link is an OMOP vocabulary export — concept codes, source-vocabulary
+codes, ancestry and synonyms for the 5,631 conditions — requested in
+[docs/vocab-export-spec.md](docs/vocab-export-spec.md). Once it lands, the two halves join
+to `condition_concept_id` in one pass and the real coverage number replaces the estimates
+above.
+
+Independent of that, the drug side is untouched: ChEMBL mechanisms and targets, and
+Reactome for gene-to-pathway. Neither needs database access.

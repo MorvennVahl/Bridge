@@ -168,6 +168,9 @@ source = { virtual = "." }
 dependencies = [
     { name = "fastapi", extra = ["standard"] },
     { name = "modal" },
+    { name = "numpy" },
+    { name = "pandas" },
+    { name = "polars" },
     { name = "pandas" },
     { name = "pyarrow" },
 ]
@@ -180,6 +183,11 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "modal", specifier = ">=1.5.5" },
+    { name = "numpy", specifier = ">=2.5.3" },
+    { name = "pandas", specifier = ">=3.0.6" },
+    { name = "polars", specifier = ">=1.44.2" },
+    { name = "pyarrow", specifier = ">=25.0.1" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.0" },
     { name = "modal", specifier = ">=1.5.5" },
     { name = "pandas", specifier = ">=2.2.0" },
