@@ -1,0 +1,246 @@
+table,column,block,description,source,source_release,endpoint,dtype,non_null_fraction
+ingredient_features.csv,omop_concept_id,identity,OMOP RxNorm Ingredient concept id,OMOP/RxNorm via CEM,"cem_ingredients.csv (local Postgres cem, cem_output.cem_unified)",,Int64,0.9995
+ingredient_features.csv,ingredient_name,identity,OMOP concept name for the ingredient,OMOP/RxNorm via CEM,"cem_ingredients.csv (local Postgres cem, cem_output.cem_unified)",,object,1.0
+ingredient_features.csv,roster_name,identity,"Name as given in the user's indication roster, where applicable",User-supplied indication roster,"conversation, 2026-09-22",,object,0.0227
+ingredient_features.csv,indication,identity,Indication block the drug was listed under in the user's roster,User-supplied indication roster,"conversation, 2026-09-22",,object,0.0227
+ingredient_features.csv,source_class,identity,Pharmacologic class as given in the user's roster CSV,User-supplied indication roster,"conversation, 2026-09-22",,object,0.0227
+ingredient_features.csv,in_indication_roster,identity,Present in the user's 97-exposure indication roster,Derived in build_features.py,-,-,bool,1.0
+ingredient_features.csv,in_cem_list,identity,Present in cem_ingredients.csv,Derived in build_features.py,-,-,bool,1.0
+ingredient_features.csv,exposure_type,identity,"drug vs non-drug exposure (ECT, psychotherapy)",User-supplied indication roster,"conversation, 2026-09-22",,object,1.0
+ingredient_features.csv,chembl_id,identity,ChEMBL molecule matched by exact normalized name or qualifier-stripped name,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,chembl_parent_id,identity,Parent molecule from ChEMBL molecule_hierarchy (salts resolved to parent),ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,chembl_match_method,identity,How the name was resolved; no fuzzy matches are used here,Derived in build_features.py,-,-,object,0.685
+ingredient_features.csv,chembl_match_n_candidates,identity,Number of distinct ChEMBL molecules sharing the matched name key,Derived in build_features.py,-,-,float64,0.6801
+ingredient_features.csv,chembl_fuzzy_candidate_id,identity,REVIEW ONLY. Nearest fuzzy name match; NOT used by any feature (high false-positive rate),Derived in build_features.py,-,-,object,0.0159
+ingredient_features.csv,chembl_fuzzy_candidate_name,identity,REVIEW ONLY. Preferred name of the fuzzy candidate,Derived in build_features.py,-,-,object,0.0159
+ingredient_features.csv,chembl_fuzzy_ratio,identity,REVIEW ONLY. difflib ratio of the fuzzy match,Derived in build_features.py,-,-,float64,0.0159
+ingredient_features.csv,max_phase,development,Highest development phase reached (4 = approved; -1 = unknown in ChEMBL),ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.685
+ingredient_features.csv,first_approval,development,Year of first regulatory approval,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.4152
+ingredient_features.csv,therapeutic_flag,development,Flagged by ChEMBL as a therapeutic (vs diagnostic/reagent),ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,availability_type,development,Raw ChEMBL availability code,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.4713
+ingredient_features.csv,dosed_ingredient,development,Appears as a dosed ingredient in a marketed product,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,withdrawn_flag,safety,Withdrawn from market in at least one jurisdiction,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,black_box_warning,safety,ChEMBL black-box warning flag on the molecule,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.685
+ingredient_features.csv,prodrug,pharmacology,ChEMBL prodrug flag; requires metabolic activation,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.685
+ingredient_features.csv,natural_product,chemistry,ChEMBL natural-product flag,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.685
+ingredient_features.csv,molecule_type,chemistry,Small molecule / Protein / Oligosaccharide / ...,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,chirality,chemistry,ChEMBL chirality code,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.685
+ingredient_features.csv,inorganic_flag,chemistry,ChEMBL inorganic flag,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.685
+ingredient_features.csv,polymer_flag,chemistry,ChEMBL polymer flag,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.685
+ingredient_features.csv,oral,exposure,Labelled for oral administration,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,parenteral,exposure,Labelled for parenteral administration,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,topical,exposure,Labelled for topical administration,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,indication_class,pharmacology,ChEMBL free-text indication class,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.0
+ingredient_features.csv,usan_stem_definition,pharmacology,USAN stem definition (encodes mechanism class from the name),ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.3724
+ingredient_features.csv,chembl_pref_name,identity,ChEMBL preferred name of the matched molecule,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,availability_label,development,Availability decoded: prescription_only / otc / discontinued / withdrawn / unknown,Derived in build_features.py,-,-,object,0.4346
+ingredient_features.csv,atc_codes,pharmacology,"All WHO ATC codes, pipe-delimited",ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,0.685
+ingredient_features.csv,n_atc_codes,pharmacology,Number of ATC codes,Derived in build_features.py,-,-,float64,0.685
+ingredient_features.csv,atc_l1,pharmacology,ATC level-1 anatomical main groups present,Derived in build_features.py,-,-,object,0.685
+ingredient_features.csv,n_atc_l1_groups,pharmacology,Number of distinct ATC level-1 groups (breadth of clinical use),Derived in build_features.py,-,-,float64,0.685
+ingredient_features.csv,atc_l3,pharmacology,ATC level-4 code prefixes (pharmacological subgroups),Derived in build_features.py,-,-,object,0.685
+ingredient_features.csv,full_mwt,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5773
+ingredient_features.csv,alogp,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,hba,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,hbd,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,psa,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,rtb,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,aromatic_rings,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,heavy_atoms,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,num_ro5_violations,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,cx_logp,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.0
+ingredient_features.csv,cx_logd,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.0
+ingredient_features.csv,cx_most_apka,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.0
+ingredient_features.csv,cx_most_bpka,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.0
+ingredient_features.csv,qed_weighted,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,molecular_species,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.0
+ingredient_features.csv,hbd_lipinski,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.0
+ingredient_features.csv,hba_lipinski,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.0
+ingredient_features.csv,np_likeness_score,chemistry,ChEMBL computed physicochemical property,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,float64,0.5213
+ingredient_features.csv,ro5_like,chemistry,"Derived Lipinski rule-of-five compliance (MW<=500, alogp<=5, HBD<=5, HBA<=10)",Derived in build_features.py,-,-,bool,1.0
+ingredient_features.csv,n_routes_labelled,exposure,Count of oral/parenteral/topical route flags set,Derived in build_features.py,-,-,object,0.685
+ingredient_features.csv,n_drug_warnings,safety,Count of ChEMBL drug_warning records (boxed warnings / withdrawals),ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/drug_warning.json,Int64,1.0
+ingredient_features.csv,warning_types,safety,"Warning types, pipe-delimited",ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/drug_warning.json,object,0.1593
+ingredient_features.csv,warning_classes,safety,"Toxicity classes (cardiotoxicity, teratogenicity, ...), pipe-delimited",ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/drug_warning.json,object,0.1593
+ingredient_features.csv,warning_year_min,safety,Earliest warning year on record,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/drug_warning.json,float64,0.0418
+ingredient_features.csv,chembl_n_metabolism_rows,metabolism,ChEMBL metabolism records for the drug or its parent,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/metabolism.json,Int64,1.0
+ingredient_features.csv,chembl_metab_enzymes,metabolism,"Enzymes named in ChEMBL metabolism records, pipe-delimited",ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/metabolism.json,object,0.0411
+ingredient_features.csv,chembl_metabolite_names,metabolism,"Named metabolites (first 12), pipe-delimited",ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/metabolism.json,object,0.0411
+ingredient_features.csv,n_mechanism_rows,mechanism,ChEMBL mechanism rows with an assigned target,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,Int64,1.0
+ingredient_features.csv,n_targets_chembl,mechanism,Distinct ChEMBL targets (may be complexes or families),ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,Int64,1.0
+ingredient_features.csv,n_target_genes,mechanism,Distinct human genes behind those targets,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,target_chembl_ids,mechanism,"ChEMBL target ids, pipe-delimited",ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,object,0.4586
+ingredient_features.csv,target_genes,mechanism,"Ensembl gene ids of targets, pipe-delimited",Derived in build_features.py,-,-,object,0.4586
+ingredient_features.csv,target_gene_symbols,mechanism,"HGNC symbols of targets, pipe-delimited",UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.4586
+ingredient_features.csv,action_types,mechanism,"Action types (INHIBITOR/AGONIST/BLOCKER/...), pipe-delimited",ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,object,0.4586
+ingredient_features.csv,mechanisms_of_action,mechanism,"ChEMBL mechanism-of-action strings, pipe-delimited (truncated at 500 chars)",ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,object,0.4586
+ingredient_features.csv,has_family_or_complex_target,mechanism,"At least one target is a protein family or complex, not a single protein",Derived in build_features.py,-,-,object,0.4586
+ingredient_features.csv,frac_direct_interaction,mechanism,Fraction of mechanism rows flagged as direct target interaction,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,float64,0.4586
+ingredient_features.csv,dominant_target_class,mechanism,Modal ChEMBL level-1 protein class across target genes,Derived in build_features.py,-,-,object,0.318
+ingredient_features.csv,n_genes_adhesion,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_auxiliary_transport_protein,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_cytosolic_other,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_enzyme,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_epigenetic_regulator,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_ion_channel,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_membrane_other,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_membrane_receptor,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_nuclear_other,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_secreted,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_structural,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_surface_antigen,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_transcription_factor,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_transporter,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_unclassified,mechanism,Count of target genes in this ChEMBL level-1 protein class,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,safety_liabilities_sum,target biology,Sum of Open Targets curated safety liabilities across target genes,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.318
+ingredient_features.csv,safety_liabilities_max,target biology,Max safety liabilities on any single target gene,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.318
+ingredient_features.csv,n_genes_with_safety_liability,target biology,Count of target genes with >=1 curated safety liability,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,Int64,1.0
+ingredient_features.csv,target_safety_events,target biology,Union of safety-liability event terms across target genes (truncated),Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.318
+ingredient_features.csv,constraint_lof_upperBin_min,target biology,Most constrained LoF decile bin across target genes (lower = more constrained),Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.3098
+ingredient_features.csv,constraint_lof_upperBin_mean,target biology,Mean LoF constraint decile bin across target genes,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.3098
+ingredient_features.csv,constraint_mis_upperBin_mean,target biology,Mean missense constraint decile bin across target genes,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.0
+ingredient_features.csv,n_essential_genes,target biology,Count of target genes flagged essential in DepMap via Open Targets,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.318
+ingredient_features.csv,n_reactome_pathways_union,target biology,Summed Reactome pathway memberships across target genes,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.318
+ingredient_features.csv,reactome_top_level_terms,target biology,Union of Reactome top-level pathway terms for target genes (truncated),Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.318
+ingredient_features.csv,n_genes_tract_SM_approved_drug,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_SM_advanced_clinical,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_SM_phase_1_clinical,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_SM_structure_with_ligand,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_SM_high_quality_ligand,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_SM_high_quality_pocket,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_SM_med_quality_pocket,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_SM_druggable_family,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_AB_approved_drug,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_AB_advanced_clinical,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_AB_phase_1_clinical,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_AB_uniprot_loc_high_conf,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_AB_go_cc_high_conf,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_AB_uniprot_loc_med_conf,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_AB_uniprot_sigp_or_tmhmm,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_AB_go_cc_med_conf,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_AB_human_protein_atlas_loc,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_PR_approved_drug,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_PR_advanced_clinical,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_PR_phase_1_clinical,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_PR_literature,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_PR_uniprot_ubiquitination,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_PR_database_ubiquitination,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_PR_half_life_data,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_PR_small_molecule_binder,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_OC_approved_drug,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_OC_advanced_clinical,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_genes_tract_OC_phase_1_clinical,target biology,Count of target genes with this Open Targets tractability bucket true,Derived in build_features.py,-,-,Int64,1.0
+ingredient_features.csv,n_mechanism_rows_any,mechanism,ChEMBL mechanism rows including those with no target assigned,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,float64,0.4586
+ingredient_features.csv,n_mechanism_rows_without_target,mechanism,Mechanism rows where ChEMBL records no target,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,float64,0.4586
+ingredient_features.csv,mechanism_recorded_but_target_unassigned,mechanism,Mechanism is documented but no target is assigned (e.g. hydralazine),Derived in build_features.py,-,-,object,0.4586
+ingredient_features.csv,kegg_drug_id,identity,KEGG DRUG entry matched by exact normalized name,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_n_candidates,identity,Number of KEGG entries sharing the matched name key,Derived in build_features.py,-,-,int64,1.0
+ingredient_features.csv,kegg_metab_enzymes,metabolism,Metabolising enzymes from the KEGG DRUG METABOLISM field,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_transporters,metabolism,Transporters from the KEGG DRUG METABOLISM field,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_interaction_genes,interactions,Genes named in the KEGG DRUG INTERACTION field (DDI partners),KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_n_metab_enzymes,metabolism,Count of KEGG metabolising enzymes,Derived in build_features.py,-,-,float64,0.5974
+ingredient_features.csv,kegg_n_transporters,metabolism,Count of KEGG transporters,Derived in build_features.py,-,-,float64,0.5974
+ingredient_features.csv,kegg_n_interaction_genes,interactions,Count of KEGG interaction genes,Derived in build_features.py,-,-,float64,0.5974
+ingredient_features.csv,kegg_cyp_inhibition,interactions,KEGG INTERACTION field records CYP inhibition,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_cyp_induction,interactions,KEGG INTERACTION field records CYP or enzyme induction,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_transporter_inhibition,interactions,KEGG INTERACTION field records transporter inhibition,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_efficacy,pharmacology,KEGG EFFICACY string (truncated at 300 chars),KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_substrate_CYP3A4,metabolism,KEGG METABOLISM names this CYP as a metabolising enzyme,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_substrate_CYP2D6,metabolism,KEGG METABOLISM names this CYP as a metabolising enzyme,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_substrate_CYP2C9,metabolism,KEGG METABOLISM names this CYP as a metabolising enzyme,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_substrate_CYP2C19,metabolism,KEGG METABOLISM names this CYP as a metabolising enzyme,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_substrate_CYP1A2,metabolism,KEGG METABOLISM names this CYP as a metabolising enzyme,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_substrate_CYP2B6,metabolism,KEGG METABOLISM names this CYP as a metabolising enzyme,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,kegg_substrate_CYP2E1,metabolism,KEGG METABOLISM names this CYP as a metabolising enzyme,KEGG DRUG,current release at retrieval,https://rest.kegg.jp/list/drug + /get/dr:<id>,object,0.5974
+ingredient_features.csv,openfda_label_any_n_labels,safety,Number of SPL label documents for this generic name with the section present (top-1000 aggregation only),openFDA,see provenance.json last_updated,https://api.fda.gov/drug/label.json (count aggregation),float64,0.0869
+ingredient_features.csv,openfda_label_boxed_warning_n_labels,safety,Number of SPL label documents for this generic name with the section present (top-1000 aggregation only),openFDA,see provenance.json last_updated,https://api.fda.gov/drug/label.json (count aggregation),float64,0.0727
+ingredient_features.csv,openfda_label_pregnancy_n_labels,safety,Number of SPL label documents for this generic name with the section present (top-1000 aggregation only),openFDA,see provenance.json last_updated,https://api.fda.gov/drug/label.json (count aggregation),float64,0.1068
+ingredient_features.csv,openfda_label_drug_interactions_n_labels,safety,Number of SPL label documents for this generic name with the section present (top-1000 aggregation only),openFDA,see provenance.json last_updated,https://api.fda.gov/drug/label.json (count aggregation),float64,0.1044
+ingredient_features.csv,openfda_has_boxed_warning_label,safety,Ingredient appears among generic names with a boxed_warning SPL section,openFDA,see provenance.json last_updated,https://api.fda.gov/drug/label.json (count aggregation),bool,1.0
+ingredient_features.csv,has_chembl_mechanism,mechanism,At least one mechanism row with an assigned target,Derived in build_features.py,-,-,boolean,1.0
+target_features.csv,target_chembl_id,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,1.0
+target_features.csv,target_pref_name,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,1.0
+target_features.csv,target_type,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,1.0
+target_features.csv,target_organism,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,1.0
+target_features.csv,component_id,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,int64,1.0
+target_features.csv,accession,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.9883
+target_features.csv,component_description,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,1.0
+target_features.csv,component_relationship,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,1.0
+target_features.csv,chembl_protein_class_path,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,1.0
+target_features.csv,chembl_protein_class_L1,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,1.0
+target_features.csv,chembl_protein_class_leaf,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,1.0
+target_features.csv,uniprot_entry,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.9792
+target_features.csv,protein_name,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.9792
+target_features.csv,gene_symbol,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.9583
+target_features.csv,aa_length,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,float64,0.9792
+target_features.csv,uniprot_keywords,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.9792
+target_features.csv,uniprot_subcellular_location,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.7044
+target_features.csv,uniprot_function,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.875
+target_features.csv,ensembl_gene_id,target biology,Ensembl gene id resolved from HGNC symbol,Ensembl,current release at retrieval,https://rest.ensembl.org/lookup/symbol/homo_sapiens,object,0.6439
+target_features.csv,ot_approved_symbol,target biology,Open Targets target attribute,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6439
+target_features.csv,ot_biotype,target biology,Open Targets target attribute,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6439
+target_features.csv,ot_is_essential,target biology,Open Targets target attribute,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6354
+target_features.csv,tract_SM_approved_drug,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_SM_advanced_clinical,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_SM_phase_1_clinical,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_SM_structure_with_ligand,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_SM_high_quality_ligand,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_SM_high_quality_pocket,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_SM_med_quality_pocket,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_SM_druggable_family,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_AB_approved_drug,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_AB_advanced_clinical,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_AB_phase_1_clinical,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_AB_uniprot_loc_high_conf,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_AB_go_cc_high_conf,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_AB_uniprot_loc_med_conf,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_AB_uniprot_sigp_or_tmhmm,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_AB_go_cc_med_conf,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_AB_human_protein_atlas_loc,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_PR_approved_drug,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_PR_advanced_clinical,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_PR_phase_1_clinical,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_PR_literature,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_PR_uniprot_ubiquitination,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_PR_database_ubiquitination,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_PR_half_life_data,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_PR_small_molecule_binder,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_OC_approved_drug,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_OC_advanced_clinical,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,tract_OC_phase_1_clinical,target biology,Open Targets tractability bucket,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6393
+target_features.csv,constraint_syn_score,target biology,Open Targets gnomAD genetic-constraint statistic,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.6133
+target_features.csv,constraint_syn_upperBin,target biology,Open Targets gnomAD genetic-constraint statistic,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.0
+target_features.csv,constraint_mis_score,target biology,Open Targets gnomAD genetic-constraint statistic,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.6133
+target_features.csv,constraint_mis_upperBin,target biology,Open Targets gnomAD genetic-constraint statistic,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.0
+target_features.csv,constraint_lof_score,target biology,Open Targets gnomAD genetic-constraint statistic,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.612
+target_features.csv,constraint_lof_upperBin,target biology,Open Targets gnomAD genetic-constraint statistic,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.6094
+target_features.csv,n_safety_liabilities,target biology,Open Targets target attribute,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.6439
+target_features.csv,safety_events,target biology,Open Targets target attribute,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6439
+target_features.csv,safety_datasources,target biology,Open Targets target attribute,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6439
+target_features.csv,n_reactome_pathways,target biology,Open Targets target attribute,Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,float64,0.6439
+target_features.csv,reactome_top_level_terms,target biology,Union of Reactome top-level pathway terms for target genes (truncated),Open Targets Platform,current release at retrieval,https://api.platform.opentargets.org/api/v4/graphql,object,0.6439
+ingredient_target_long.csv,omop_concept_id,identity,OMOP RxNorm Ingredient concept id,OMOP/RxNorm via CEM,"cem_ingredients.csv (local Postgres cem, cem_output.cem_unified)",,int64,1.0
+ingredient_target_long.csv,ingredient_name,identity,OMOP concept name for the ingredient,OMOP/RxNorm via CEM,"cem_ingredients.csv (local Postgres cem, cem_output.cem_unified)",,object,1.0
+ingredient_target_long.csv,chembl_id,identity,ChEMBL molecule matched by exact normalized name or qualifier-stripped name,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/molecule.json,object,1.0
+ingredient_target_long.csv,target_chembl_id,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,0.9675
+ingredient_target_long.csv,action_type,mechanism,ChEMBL mechanism record field,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,object,0.9675
+ingredient_target_long.csv,mechanism_of_action,mechanism,ChEMBL mechanism record field,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,object,1.0
+ingredient_target_long.csv,direct_interaction,mechanism,ChEMBL mechanism record field,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,int64,1.0
+ingredient_target_long.csv,molecular_mechanism,mechanism,ChEMBL mechanism record field,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,int64,1.0
+ingredient_target_long.csv,disease_efficacy,mechanism,ChEMBL mechanism record field,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,int64,1.0
+ingredient_target_long.csv,target_pref_name,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,0.9456
+ingredient_target_long.csv,target_type,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,0.9456
+ingredient_target_long.csv,accession,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.93
+ingredient_target_long.csv,gene_symbol,target biology,UniProtKB annotation,UniProtKB,current release at retrieval,https://rest.uniprot.org/uniprotkb/stream,object,0.9183
+ingredient_target_long.csv,ensembl_gene_id,target biology,Ensembl gene id resolved from HGNC symbol,Ensembl,current release at retrieval,https://rest.ensembl.org/lookup/symbol/homo_sapiens,object,0.5574
+ingredient_target_long.csv,component_relationship,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,0.9456
+ingredient_target_long.csv,chembl_protein_class_L1,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,0.9456
+ingredient_target_long.csv,chembl_protein_class_leaf,target biology,ChEMBL target / component definition,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/target.json,object,0.9456
+ingredient_target_long.csv,mechanism_source,mechanism,ChEMBL mechanism record field,ChEMBL,ChEMBL_37 (2026-05-01),https://www.ebi.ac.uk/chembl/api/data/mechanism.json,object,1.0
+ingredient_features_label_adjacent.csv,omop_concept_id,identity,OMOP RxNorm Ingredient concept id,OMOP/RxNorm via CEM,"cem_ingredients.csv (local Postgres cem, cem_output.cem_unified)",,Int64,0.9995
+ingredient_features_label_adjacent.csv,ingredient_name,identity,OMOP concept name for the ingredient,OMOP/RxNorm via CEM,"cem_ingredients.csv (local Postgres cem, cem_output.cem_unified)",,object,1.0
+ingredient_features_label_adjacent.csv,cem_n_conditions,LABEL-ADJACENT,"Derived from the CEM association file itself (same FAERS lineage as the labels) - nuisance/degree term, not a biology predictor",OHDSI Common Evidence Model,local Postgres cem,cem_ingredient_condition_associations.csv,float64,0.9991
+ingredient_features_label_adjacent.csv,cem_n_faers_pairs,LABEL-ADJACENT,"Derived from the CEM association file itself (same FAERS lineage as the labels) - nuisance/degree term, not a biology predictor",OHDSI Common Evidence Model,local Postgres cem,cem_ingredient_condition_associations.csv,float64,0.9991
+ingredient_features_label_adjacent.csv,cem_n_semmeddb_pairs,LABEL-ADJACENT,"Derived from the CEM association file itself (same FAERS lineage as the labels) - nuisance/degree term, not a biology predictor",OHDSI Common Evidence Model,local Postgres cem,cem_ingredient_condition_associations.csv,float64,0.9991
+ingredient_features_label_adjacent.csv,cem_faers_case_count_sum,LABEL-ADJACENT,"Derived from the CEM association file itself (same FAERS lineage as the labels) - nuisance/degree term, not a biology predictor",OHDSI Common Evidence Model,local Postgres cem,cem_ingredient_condition_associations.csv,float64,0.9991
+ingredient_features_label_adjacent.csv,cem_faers_prr_median,LABEL-ADJACENT,"Derived from the CEM association file itself (same FAERS lineage as the labels) - nuisance/degree term, not a biology predictor",OHDSI Common Evidence Model,local Postgres cem,cem_ingredient_condition_associations.csv,float64,0.7771
