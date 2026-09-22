@@ -46,6 +46,21 @@ def load_gene_symbols() -> dict[int, str]:
     return symbols
 
 
+def ensembl_to_symbol() -> dict[str, str]:
+    """Ensembl gene id -> approved symbol, from the Open Targets target index.
+
+    The inverse direction from `symbol_to_ensembl`, needed because Open Targets keys its
+    target-disease associations on Ensembl ids while the rest of the condition side is
+    assembled around symbols.
+    """
+    files = sorted(paths.OT_TARGET_GLOB_DIR.glob("target__part-*.parquet"))
+    if not files:
+        logger.warning("no Open Targets target parquet files found; symbols unavailable")
+        return {}
+    frame = pl.read_parquet(files, columns=["id", "approvedSymbol"]).drop_nulls()
+    return dict(zip(frame["id"].to_list(), frame["approvedSymbol"].to_list(), strict=True))
+
+
 def symbol_to_ensembl() -> dict[str, str]:
     """Gene symbol -> Ensembl gene id, from the Open Targets target index.
 
