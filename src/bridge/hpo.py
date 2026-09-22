@@ -18,30 +18,13 @@ from collections import deque
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 
+from bridge.xrefs import normalise_id, parse_xref
+
 logger = logging.getLogger(__name__)
 
 ROOT = "HP:0000001"
 
 _QUOTED = re.compile(r'"((?:[^"\\]|\\.)*)"')
-
-# Open Targets writes obo ids with an underscore (HP_0000118); HPO files use a colon.
-_OT_ID = re.compile(r"^([A-Za-z]+)_(\d+)$")
-
-# Xref sources worth keeping, normalised to a single label per vocabulary. SNOMEDCT_US and
-# SCTID are the same vocabulary under two spellings and must collapse, or a SNOMED code
-# joins on only one of them.
-_XREF_SOURCES = {
-    "SNOMEDCT_US": "SNOMED",
-    "SNOMEDCT": "SNOMED",
-    "SCTID": "SNOMED",
-    "UMLS": "UMLS",
-    "MESH": "MESH",
-    "MEDDRA": "MEDDRA",
-    "ICD10": "ICD10",
-    "ICD-10": "ICD10",
-    "NCIT": "NCIT",
-    "OMIM": "OMIM",
-}
 
 
 @dataclasses.dataclass(slots=True)
@@ -55,12 +38,6 @@ class HpoTerm:
     alt_ids: list[str]
     is_obsolete: bool
     replaced_by: str | None
-
-
-def normalise_id(raw: str) -> str:
-    """Turn an Open Targets-style `HP_0000118` into the canonical `HP:0000118`."""
-    match = _OT_ID.match(raw)
-    return f"{match.group(1)}:{match.group(2)}" if match else raw
 
 
 def parse_obo(path: Path) -> dict[str, HpoTerm]:
@@ -228,8 +205,6 @@ def extract_xrefs(
         if not hpo_id.startswith("HP:") or not xrefs:
             continue
         for xref in xrefs:
-            source, _, code = xref.partition(":")
-            canonical = _XREF_SOURCES.get(source.upper())
-            if canonical and code:
-                out.append((hpo_id, canonical, code.strip()))
+            if parsed := parse_xref(xref):
+                out.append((hpo_id, parsed[0], parsed[1]))
     return out
