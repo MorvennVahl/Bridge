@@ -14,6 +14,7 @@ import logging
 import polars as pl
 
 from bridge import paths
+from bridge.genes import load_gene_symbols
 from bridge.hpo import (
     HpoTerm,
     compute_ancestors,
@@ -99,13 +100,19 @@ def build_xrefs_table() -> pl.DataFrame:
 
 
 def build_genes_table(
-    annotated: dict[str, set[int]], specific: dict[str, set[int]]
+    annotated: dict[str, set[int]],
+    specific: dict[str, set[int]],
+    symbols: dict[int, str],
 ) -> pl.DataFrame:
-    """One row per (term, gene), flagging genes attached at this term rather than below it."""
+    """One row per (term, gene), flagging genes attached at this term rather than below it.
+
+    Carries `gene_symbol` because the drug-side tables key on symbol, not NCBI id.
+    """
     rows = [
         {
             "hpo_id": hpo_id,
             "ncbi_gene_id": gene,
+            "gene_symbol": symbols.get(gene),
             "is_specific": gene in specific.get(hpo_id, ()),
         }
         for hpo_id, genes in annotated.items()
@@ -113,7 +120,12 @@ def build_genes_table(
     ]
     return pl.DataFrame(
         rows,
-        schema={"hpo_id": pl.String, "ncbi_gene_id": pl.Int64, "is_specific": pl.Boolean},
+        schema={
+            "hpo_id": pl.String,
+            "ncbi_gene_id": pl.Int64,
+            "gene_symbol": pl.String,
+            "is_specific": pl.Boolean,
+        },
     )
 
 
@@ -132,7 +144,7 @@ def main() -> None:
 
     terms_table = build_terms_table(terms, ancestors, descendants, depths, annotated, specific, ic)
     xrefs_table = build_xrefs_table()
-    genes_table = build_genes_table(annotated, specific)
+    genes_table = build_genes_table(annotated, specific, load_gene_symbols())
 
     terms_table.write_parquet(paths.HPO_TERMS_OUT)
     xrefs_table.write_parquet(paths.HPO_XREFS_OUT)
