@@ -51,13 +51,25 @@ Expected: roughly 50k–150k rows, wide variance depending on which vocabularies
 psql -d cem -c "\copy (with conditions as (select distinct u.concept_id_2 as condition_concept_id from cem_output.cem_unified u join staging_vocabulary.concept c1 on c1.concept_id=u.concept_id_1 join staging_vocabulary.concept c2 on c2.concept_id=u.concept_id_2 where c1.concept_class_id='Ingredient' and c2.domain_id='Condition' and c2.standard_concept='S') select cr.concept_id_2 as condition_concept_id, c.vocabulary_id as source_vocabulary_id, c.concept_code as source_concept_code, c.concept_name as source_concept_name, c.concept_class_id as source_concept_class_id from conditions k join staging_vocabulary.concept_relationship cr on cr.concept_id_2=k.condition_concept_id join staging_vocabulary.concept c on c.concept_id=cr.concept_id_1 where cr.relationship_id='Maps to' and cr.invalid_reason is null order by 1,2,3) to 'data/ref/omop/concept_source_codes.csv' csv header"
 ```
 
-**One thing worth checking while you're in there:** does this vocabulary build include an
-`HPO` vocabulary_id? Run
-`select vocabulary_id, count(*) from staging_vocabulary.concept group by 1 order by 2 desc;`
-and send us the output. Roughly three quarters of the unmapped conditions are symptoms and
-findings ("abdominal bloating", "abnormal breath sounds") rather than diseases — those will
-never map to MONDO, but they map cleanly to HPO, and knowing whether OMOP can hand us HPO
-codes directly changes how we build that half of the pipeline.
+### Please also run this one-liner and paste the output
+
+```sql
+select vocabulary_id, count(*) from staging_vocabulary.concept group by 1 order by 2 desc;
+```
+
+We specifically need to know whether this build has an **`HPO`** vocabulary, and it matters
+more than it sounds.
+
+Roughly three quarters of the conditions we cannot currently map are symptoms and findings
+("abdominal bloating", "abnormal breath sounds") rather than diseases. Those never map to
+MONDO, so they have to go through HPO instead. We have the HPO side built already — but the
+only key it exposes is SNOMED, and we measured that at just 3,443 of 20,482 HPO terms
+(16.8%). HPO's own files carry richer cross-references to UMLS (12,839 terms), which OMOP
+cannot give us because it does not ship UMLS CUIs.
+
+So if this build has HPO codes, we join the symptom half directly and skip that 16.8%
+bottleneck entirely. If it doesn't, SNOMED is our ceiling and we plan around it. Either
+answer is useful; we just can't tell from here.
 
 ## 3. Hierarchy — `concept_ancestor.csv`
 
