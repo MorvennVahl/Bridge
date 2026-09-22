@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# JetBrains
+.idea/
+
+# Modal skill install (regenerable via `modal skills install`)
+.agents/
