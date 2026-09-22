@@ -4,21 +4,16 @@ Predict, for a drug–condition pair with no real-world data, whether the drug i
 **treat** the condition or **cause** it, using biology (targets, genes, pathways, disease
 hierarchy) as the bridge between drugs that have real-world evidence and drugs that do not.
 
-```mermaid
-flowchart LR
-    D[Ingredient] -->|has_mechanism| T[Target / protein]
-    T -->|encoded_by| G[Gene]
-    G -->|member_of| P[Pathway]
-    G -->|associated_with| C[Condition]
-    P -.->|implicated_in| C
-    C -->|is_a| C
-    D ==>|RWD label: treats / causes| C
-    style D fill:#dbeafe,stroke:#1d4ed8
-    style C fill:#fee2e2,stroke:#b91c1c
+```
+Ingredient --has_mechanism--> Target --encoded_by--> Gene --member_of--> Pathway
+                                                       |                    :
+                                                       +--associated_with-->+
+                                                                            v
+Ingredient ==================== RWD label: treats / causes ===========> Condition --is_a--> Condition
 ```
 
-Solid edges are inputs. The bold edge is the label, learned from pairs that have real-world
-evidence and predicted for pairs that do not.
+Single-line edges are inputs. The double-line edge is the label, learned from pairs that have
+real-world evidence and predicted for pairs that do not.
 
 ## Data in this repo
 
