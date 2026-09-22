@@ -368,8 +368,12 @@ def run(exp_id: str) -> dict[str, float]:
     feature_cols = numeric_feature_cols
     log.info("Using %d feature columns (%d group one-hots)", len(feature_cols), len(group_cols))
 
-    X_train = train_sub[feature_cols].apply(pd.to_numeric, errors="coerce").astype("float32")  # noqa: N806 -- conventional sklearn feature-matrix name
-    X_validate = validate_sub[feature_cols].apply(pd.to_numeric, errors="coerce").astype("float32")  # noqa: N806
+    X_train = (  # noqa: N806 -- conventional sklearn name
+        train_sub[feature_cols].apply(pd.to_numeric, errors="coerce").astype("float32")
+    )
+    X_validate = (  # noqa: N806 -- conventional sklearn name
+        validate_sub[feature_cols].apply(pd.to_numeric, errors="coerce").astype("float32")
+    )
     y_train_res = train_sub["residual"].to_numpy()
     y_validate_res = validate_sub["residual"].to_numpy()
     groups_train = train_sub["group_key"].to_numpy()

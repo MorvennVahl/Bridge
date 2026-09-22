@@ -112,7 +112,8 @@ def done_ids(path: Path) -> set[str]:
 
 def main() -> int:
     ids_file, out_file = Path(sys.argv[1]), Path(sys.argv[2])
-    wanted = [line.strip() for line in ids_file.read_text().splitlines() if line.strip()]
+    with open(ids_file) as fh:
+        wanted = [ln.strip() for ln in fh if ln.strip()]
     already = done_ids(out_file)
     todo = [i for i in wanted if i not in already]
     print(f"wanted {len(wanted)} | already done {len(already)} | to fetch {len(todo)}", flush=True)

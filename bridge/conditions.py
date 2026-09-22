@@ -20,12 +20,23 @@ import pandas as pd
 import polars as pl
 
 from bridge import condition_map, paths
+from bridge.genes import ensembl_to_symbol
 from bridge.xrefs import normalise_id
 
 logger = logging.getLogger(__name__)
 
 PHENOTYPE_ARM = "phenotype"
 DISEASE_ARM = "disease"
+
+#: Open Targets evidence types that must never become model features.
+#:
+#: `known_drug` is derived from ChEMBL drug indications and clinical trials: it says
+#: "a drug hitting this target is developed for this disease". Our label is whether a drug
+#: treats or causes a condition, so feeding it in would let the model read the answer off
+#: its own input. The other datatypes (genetic_association, animal_model, literature,
+#: somatic_mutation, rna_expression, affected_pathway, genetic_literature) describe
+#: gene-disease biology rather than drug-disease outcomes, and are safe.
+LEAKY_DATATYPES = frozenset({"known_drug"})
 
 
 def run_mapping() -> pl.DataFrame:
@@ -83,8 +94,53 @@ def best_tier_matches(mapped: pl.DataFrame) -> pl.DataFrame:
     )
 
 
-def condition_genes(matches: pl.DataFrame) -> pl.DataFrame:
-    """Condition -> gene, drawn from whichever arm the condition mapped through."""
+def gene_evidence(matches: pl.DataFrame) -> pl.DataFrame:
+    """Condition -> gene weighted by Open Targets evidence, one row per datatype.
+
+    Returns an empty frame when the Open Targets association file has not been fetched, so
+    the rest of the build still runs; see `scripts/fetch_opentargets_associations.py`.
+
+    `known_drug` is dropped here rather than at fetch time: the reference file stays
+    faithful to Open Targets, and the exclusion lives next to the reason for it.
+    """
+    schema = {
+        "condition_concept_id": pl.Int64,
+        "ensembl_gene_id": pl.String,
+        "datatype": pl.String,
+        "association_score": pl.Float64,
+        "evidence_count": pl.Int64,
+    }
+    if not paths.OT_ASSOCIATIONS.exists():
+        logger.warning(
+            "%s not found; condition genes will come from HPO only. Run "
+            "scripts/fetch_opentargets_associations.py to add the weighted edge.",
+            paths.OT_ASSOCIATIONS.name,
+        )
+        return pl.DataFrame(schema=schema)
+
+    associations = pl.read_parquet(paths.OT_ASSOCIATIONS).with_columns(
+        pl.col("diseaseId").str.replace("_", ":").alias("ontology_id")
+    )
+    return (
+        matches.filter(pl.col("arm") == DISEASE_ARM)
+        .join(associations, on="ontology_id")
+        .filter(~pl.col("datatype").is_in(list(LEAKY_DATATYPES)))
+        .group_by("condition_concept_id", "ensembl_gene_id", "datatype")
+        .agg(
+            pl.col("associationScore").max().alias("association_score"),
+            pl.col("evidenceCount").sum().alias("evidence_count"),
+        )
+        .cast(schema)  # type: ignore[arg-type]
+    )
+
+
+def condition_genes(matches: pl.DataFrame, evidence: pl.DataFrame) -> pl.DataFrame:
+    """Condition -> gene, unioned across every source that implicates the gene.
+
+    `gene_symbol` is the canonical key because it is the only identifier both this side and
+    the drug side carry. `ncbi_gene_id` is null for genes that only Open Targets knows
+    about, and `ot_max_score` is null for genes only HPO knows about.
+    """
     hpo_genes = pl.read_parquet(paths.HPO_GENES_OUT)
     disease_genes = pl.read_parquet(paths.DISEASE_GENES_OUT)
 
@@ -92,16 +148,65 @@ def condition_genes(matches: pl.DataFrame) -> pl.DataFrame:
         matches.filter(pl.col("arm") == PHENOTYPE_ARM)
         .join(hpo_genes, left_on="ontology_id", right_on="hpo_id")
         .select("condition_concept_id", "ncbi_gene_id", "gene_symbol")
-        .with_columns(pl.lit(PHENOTYPE_ARM).alias("arm"))
     )
     disease = (
         matches.filter(pl.col("arm") == DISEASE_ARM)
         .join(disease_genes, left_on="ontology_id", right_on="disease_id")
         .select("condition_concept_id", "ncbi_gene_id", "gene_symbol")
-        .with_columns(pl.lit(DISEASE_ARM).alias("arm"))
     )
-    return pl.concat([phenotype, disease]).unique(
-        subset=["condition_concept_id", "ncbi_gene_id"], keep="first"
+    curated = (
+        pl.concat([phenotype, disease])
+        .drop_nulls("gene_symbol")
+        .unique(subset=["condition_concept_id", "gene_symbol"], keep="first")
+        .with_columns(pl.lit(True).alias("from_curated"))
+    )
+
+    scored = (
+        evidence.group_by("condition_concept_id", "ensembl_gene_id")
+        .agg(
+            pl.col("association_score").max().alias("ot_max_score"),
+            pl.col("association_score")
+            .filter(pl.col("datatype") == "genetic_association")
+            .max()
+            .alias("ot_genetic_score"),
+            pl.col("datatype").n_unique().alias("n_ot_datatypes"),
+        )
+        .with_columns(
+            pl.col("ensembl_gene_id")
+            .replace_strict(ensembl_to_symbol(), default=None, return_dtype=pl.String)
+            .alias("gene_symbol")
+        )
+        .drop_nulls("gene_symbol")
+        # Several Ensembl ids can share an approved symbol, so collapse again on the symbol
+        # or the join below multiplies rows.
+        .group_by("condition_concept_id", "gene_symbol")
+        .agg(
+            pl.col("ensembl_gene_id").sort().first(),
+            pl.col("ot_max_score").max(),
+            pl.col("ot_genetic_score").max(),
+            pl.col("n_ot_datatypes").max(),
+        )
+        .with_columns(pl.lit(True).alias("from_open_targets"))
+    )
+
+    return (
+        curated.join(scored, on=["condition_concept_id", "gene_symbol"], how="full", coalesce=True)
+        .with_columns(
+            pl.col("from_curated").fill_null(False),
+            pl.col("from_open_targets").fill_null(False),
+            pl.col("n_ot_datatypes").fill_null(0),
+        )
+        .select(
+            "condition_concept_id",
+            "gene_symbol",
+            "ncbi_gene_id",
+            "ensembl_gene_id",
+            "from_curated",
+            "from_open_targets",
+            "ot_max_score",
+            "ot_genetic_score",
+            "n_ot_datatypes",
+        )
     )
 
 
