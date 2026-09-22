@@ -14,3 +14,6 @@ venv/
 # macOS / R
 .DS_Store
 .Rproj.user
+
+# Derived tables (regenerable via src/bridge/build_*.py)
+data/derived/
