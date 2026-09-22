@@ -24,12 +24,14 @@ jobs:
       pull-requests: read
       issues: read
       id-token: write
+      actions: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          lfs: true
 
       - name: Run Claude Code Review
         id: claude-review
@@ -38,7 +40,27 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
+          additional_permissions: |
+            actions: read
+          prompt: |
+            Review pull request ${{ github.repository }}#${{ github.event.pull_request.number }}.
+
+            Step 1 — Run the multi-agent review:
+              /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}
+
+            Step 2 — After the plugin finishes, do a Modal-focused pass on the diff:
+              - Verify every @app.function() has an explicit timeout=
+              - Verify modal.Image chains pin every package version
+              - Verify no hardcoded secrets/tokens (must use modal.Secret.from_name)
+              - Verify async paths use .aio() variants
+              - Verify GPU requests specify a concrete type, not gpu=True
+              - Verify @app.function() decorators have stable app names
+
+            Step 3 — Check the CI status for this PR via `gh pr checks`.
+              If lint (ruff) or types (pyright) failed, quote the failing rule and cite the file:line.
+              Do NOT re-run linters yourself — trust the CI signal.
+
+            Follow CLAUDE.md conventions strictly. Filter findings below 80 confidence.
           # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
           # or https://code.claude.com/docs/en/cli-reference for available options
 
