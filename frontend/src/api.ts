@@ -88,13 +88,38 @@ async function jsonReq<T>(path: string, init?: RequestInit): Promise<T> {
     let detail = `${r.status} ${r.statusText}`;
     try {
       const body = await r.json();
-      if (body?.detail) detail = String(body.detail);
+      detail = extractDetail(body) ?? detail;
     } catch {
-      /* ignore */
+      /* ignore parse failure */
     }
     throw new Error(detail);
   }
   return r.json() as Promise<T>;
+}
+
+function extractDetail(body: unknown): string | null {
+  if (!body || typeof body !== "object") return null;
+  const b = body as { detail?: unknown };
+  const d = b.detail;
+  if (typeof d === "string") return d;
+  if (Array.isArray(d)) {
+    // FastAPI/Pydantic 422 shape: [{loc, msg, type, ...}, ...]
+    const msgs = d
+      .map((e) => {
+        if (e && typeof e === "object" && "msg" in e) {
+          const loc = "loc" in e && Array.isArray((e as { loc: unknown }).loc)
+            ? ((e as { loc: unknown[] }).loc).join(".")
+            : "";
+          const msg = String((e as { msg: unknown }).msg);
+          return loc ? `${loc}: ${msg}` : msg;
+        }
+        return String(e);
+      })
+      .filter(Boolean);
+    if (msgs.length) return msgs.join("; ");
+  }
+  if (d && typeof d === "object") return JSON.stringify(d);
+  return null;
 }
 
 export interface WorkflowRun {
