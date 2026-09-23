@@ -1,4 +1,4 @@
-# exp16 — Does biology predict approved indications?
+# exp21 — Does biology predict approved indications?
 
 Experiment id `exp_20260922_132b7b`. Depends on the ChEMBL indication layer (PR #21).
 
@@ -68,7 +68,7 @@ per-datatype columns and drop `dt_clinical`.
 ## Reproduce
 
 ```bash
-uv run python experiments/exp16_indication_label_biology.py
+uv run python experiments/exp21_indication_label_biology.py
 ```
 
 Writes `results/exp_20260922_132b7b_metrics.json`.
