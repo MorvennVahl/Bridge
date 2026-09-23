@@ -1,4 +1,4 @@
-"""exp16 — Does biology predict APPROVED indications?
+"""exp21 — Does biology predict APPROVED indications?
 
 Registered as exp_20260922_132b7b.
 
@@ -16,7 +16,7 @@ this label, and `ot_score` blends it in. Overlap is weighted by `dt_genetic_asso
 only. The leak check at the end includes `dt_clinical` deliberately, to show the size of
 the effect it would fabricate — that number is a demonstration, not a result.
 
-Run: uv run python experiments/exp16_indication_label_biology.py
+Run: uv run python experiments/exp21_indication_label_biology.py
 """
 
 from __future__ import annotations
