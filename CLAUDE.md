@@ -28,6 +28,7 @@ This file is loaded by the `code-review` plugin's compliance agents. Each rule i
 - **Ignored regenerable artifacts**: `.agents/` (Modal skill install), `.venv/`, `__pycache__/`, `.idea/` — never stage these.
 - **Dep management**: `uv` only. Never edit `uv.lock` by hand. New deps go through `uv add` (runtime) or `uv add --group dev` (dev).
 - **CI is authoritative**: `ruff check`, `ruff format --check`, and `pyright` must pass. Do not disable rules to silence warnings — fix the code or justify with an inline `# noqa: <code>` comment explaining why.
+- **No AI attribution.** Never add `Co-Authored-By: Claude ...`, `Generated with Claude Code`, or any equivalent to a commit message or a pull request description. The history and the PR record are the team's own. Enforced by `.github/workflows/attribution.yml`; see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Review focus
 
