@@ -137,17 +137,27 @@ or on a better condition→gene layer instead.
 exp = ln.register(
     agent="exp15",
     title="Reactome pathway overlap, and a valid placebo battery",
-    hypothesis=("Pathway overlap adds <0.01 drug_macro_auc over gene overlap overall but "
-                "carries the signal on pairs with zero shared genes; and exp08's "
-                "zero-neighbour placebo result is an artefact of comparing two differently "
-                "fitted models rather than evidence of a p_c surrogate."),
-    approach=("Refit-within-subset and train-time value-permutation placebos on exp08's "
-              "neighbour feature and the new pathway features; Reactome membership from the "
-              "OT target parquets (not the hierarchy-only reactome file); sparse gene-pathway "
-              "products; conditional evaluation on zero-shared-gene pairs."),
+    hypothesis=(
+        "Pathway overlap adds <0.01 drug_macro_auc over gene overlap overall but "
+        "carries the signal on pairs with zero shared genes; and exp08's "
+        "zero-neighbour placebo result is an artefact of comparing two differently "
+        "fitted models rather than evidence of a p_c surrogate."
+    ),
+    approach=(
+        "Refit-within-subset and train-time value-permutation placebos on exp08's "
+        "neighbour feature and the new pathway features; Reactome membership from the "
+        "OT target parquets (not the hierarchy-only reactome file); sparse gene-pathway "
+        "products; conditional evaluation on zero-shared-gene pairs."
+    ),
     label="y_faers_signal",
-    features=["degree", "p_c", "intrinsic_union", "nb_excess_gene", "gene_overlap",
-              "pathway_overlap"],
+    features=[
+        "degree",
+        "p_c",
+        "intrinsic_union",
+        "nb_excess_gene",
+        "gene_overlap",
+        "pathway_overlap",
+    ],
     split="train/validate, grouped by primary target gene",
     notes="Pathway half of the never-completed exp10, plus the exp08 placebo correction.",
 )
