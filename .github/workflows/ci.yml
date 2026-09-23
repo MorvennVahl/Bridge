@@ -57,3 +57,4 @@ jobs:
 
       - name: pyright
         run: uv run pyright
+

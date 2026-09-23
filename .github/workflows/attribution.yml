@@ -1,0 +1,51 @@
+name: Attribution
+
+# The commit log and the PR record are the team's own work. Assistant tooling adds
+# co-author trailers by default, so this fails the build rather than relying on everyone
+# remembering to switch it off. See CONTRIBUTING.md.
+#
+# Kept as its own workflow so a change here cannot break the lint and types jobs.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  attribution:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: No AI attribution in new commits
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -uo pipefail
+
+          # Ask git for parsed trailers rather than grepping the message body. A
+          # free-text version of this check failed on the very commit that introduced
+          # it: that commit described the rule, and the grep matched its own prose.
+          trailers=$(git log --format='%(trailers:key=Co-authored-by,valueonly)' "$BASE_SHA..$HEAD_SHA")
+          bad_trailers=$(echo "$trailers" | grep -iE 'claude|anthropic' || true)
+
+          # The generated-with line is not a trailer, so it is matched near line start.
+          bodies=$(git log --format='%B' "$BASE_SHA..$HEAD_SHA")
+          bad_generated=$(echo "$bodies" | grep -iE '^[[:space:]]*.{0,4}generated with .*claude' || true)
+
+          if [ -n "$bad_trailers" ] || [ -n "$bad_generated" ]; then
+            echo "::error::Commits in this PR carry AI attribution. Remove them, amend, and force-push. See CONTRIBUTING.md"
+            if [ -n "$bad_trailers" ]; then
+              echo "co-author trailers found:"
+              echo "$bad_trailers"
+            fi
+            if [ -n "$bad_generated" ]; then
+              echo "generated-with lines found:"
+              echo "$bad_generated"
+            fi
+            exit 1
+          fi
+
+          echo "No AI attribution found in commits $BASE_SHA..$HEAD_SHA"
