@@ -123,13 +123,17 @@ for Round 4.
 exp = ln.register(
     agent="exp13",
     title="Per-subset floors, and the within-drug residual re-refereed against them",
-    hypothesis=("Neither exp09 model beats degree+p_c (0.8480) on its own case_count>=3 "
-                "subset, while on full rows the continuous within-drug residual does beat the "
-                "binary flag against the same floor."),
-    approach=("Ship floors.py computing p_c and degree+p_c floors per (label, subset, "
-              "eligibility); build a reference floor table for every population used so far; "
-              "refit residual regressor and classifier on full rows with floors for the rank "
-              "metric as well as the AUC."),
+    hypothesis=(
+        "Neither exp09 model beats degree+p_c (0.8480) on its own case_count>=3 "
+        "subset, while on full rows the continuous within-drug residual does beat the "
+        "binary flag against the same floor."
+    ),
+    approach=(
+        "Ship floors.py computing p_c and degree+p_c floors per (label, subset, "
+        "eligibility); build a reference floor table for every population used so far; "
+        "refit residual regressor and classifier on full rows with floors for the rank "
+        "metric as well as the AUC."
+    ),
     label="faers_prr_within_drug_residual",
     features=["degree", "p_c", "drug_intrinsic", "condition_intrinsic"],
     split="train/validate, full rows and case_count>=3 subset",

@@ -126,13 +126,17 @@ revised `solved_threshold`, then the CEM-versus-reference rank gap.
 exp = ln.register(
     agent="exp11",
     title="Adjudicated reference-set evaluation and a usable success criterion",
-    hypothesis=("On an externally adjudicated set with real negatives, the intrinsic union "
-                "and neighbour models exceed the p_c floor computed on that set, and the "
-                "ceiling lands in 0.65-0.85."),
-    approach=("Claude Code fetches and maps the OMOP/EU-ADR/OHDSI reference sets to OMOP "
-              "concept ids; Modal re-scores the existing models on reference pairs with "
-              "per-drug and pooled metrics, bootstrap CIs, and emits success_criterion.json "
-              "v2."),
+    hypothesis=(
+        "On an externally adjudicated set with real negatives, the intrinsic union "
+        "and neighbour models exceed the p_c floor computed on that set, and the "
+        "ceiling lands in 0.65-0.85."
+    ),
+    approach=(
+        "Claude Code fetches and maps the OMOP/EU-ADR/OHDSI reference sets to OMOP "
+        "concept ids; Modal re-scores the existing models on reference pairs with "
+        "per-drug and pooled metrics, bootstrap CIs, and emits success_criterion.json "
+        "v2."
+    ),
     label="reference_set_label",
     features=["p_c", "faers_prr", "intrinsic_union", "nb_excess_gene", "residual_model"],
     split="reference pairs, no fitting",
