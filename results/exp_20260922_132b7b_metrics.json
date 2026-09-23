@@ -1,0 +1,20 @@
+{
+  "floor_pc": 0.8468766262343606,
+  "n_drugs_scored": 281.0,
+  "floor_degree_pc": 0.8257213762594854,
+  "union_with_gene_overlap": 0.8617151036019199,
+  "overlap_alone": 0.601474365956444,
+  "increment_over_pc": 0.014838477367559388,
+  "increment_over_degree_pc": 0.035993727342434556,
+  "share_pairs_with_overlap": 0.027359485641669935,
+  "drug_macro_p10_union": 0.061921708185053374,
+  "drug_macro_p10_floor_pc": 0.045195729537366544,
+  "pooled_ap_union": 0.04792839297301277,
+  "pooled_ap_floor_pc": 0.034138018271915094,
+  "increment_ci_lo": 0.0039783240571789795,
+  "increment_ci_hi": 0.0261083969418416,
+  "increment_vs_fitted_ci_lo": 0.01886835327587327,
+  "increment_vs_fitted_ci_hi": 0.05279805528896939,
+  "LEAK_union_with_dt_clinical": 0.8874725596631512,
+  "LEAK_inflation": 0.025757456061231254
+}
